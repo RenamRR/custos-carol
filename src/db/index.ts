@@ -4,8 +4,10 @@ import * as schema from "./schema";
 
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 
-// O dev server do Next recarrega os módulos a cada edição; sem cache no globalThis
-// cada reload abre um pool novo e o Postgres estoura o limite de conexões.
+// Um pool só por processo, guardado no globalThis. Vale em dev (o Next recarrega os
+// módulos a cada edição) e em produção: getDb() é chamado a cada consulta, e sem o
+// cache cada chamada abria um pool novo que nunca fechava — em 25/11 o Postgres
+// estourou com "too many clients" poucos minutos depois da subida.
 const cache = globalThis as unknown as { _pgClient?: postgres.Sql; _db?: Db };
 
 /**
@@ -24,10 +26,8 @@ export function getDb(): Db {
   const client = cache._pgClient ?? postgres(url, { max: 10 });
   const db = drizzle(client, { schema });
 
-  if (process.env.NODE_ENV !== "production") {
-    cache._pgClient = client;
-    cache._db = db;
-  }
+  cache._pgClient = client;
+  cache._db = db;
   return db;
 }
 
