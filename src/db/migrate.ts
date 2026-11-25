@@ -7,11 +7,44 @@
  * driver que a aplicação usa. O registro importa: migrações que alteram schema
  * (drop de coluna, migração de dados) não são idempotentes e não podem rodar duas vezes.
  */
-import { readdir, readFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import postgres from "postgres";
 
 const DIR = path.join(process.cwd(), "drizzle");
+
+/** Quantas cópias manter em BACKUP_DIR; as mais antigas são apagadas. */
+const MANTER_BACKUPS = 30;
+
+/**
+ * Cópia completa das tabelas em JSON, antes de qualquer migração. Só roda quando
+ * BACKUP_DIR está definido (no Dokploy aponta para um volume). Se a cópia falhar,
+ * a migração não roda: migrar dado real sem cópia é o risco que isto existe para evitar.
+ */
+async function backup(sql: postgres.Sql, dir: string) {
+  const tabelas = await sql<{ table_name: string }[]>`
+    select table_name from information_schema.tables
+    where table_schema = 'public' and table_type = 'BASE TABLE'
+    order by table_name`;
+  const dump: { geradoEm: string; tabelas: Record<string, readonly unknown[]> } = {
+    geradoEm: new Date().toISOString(),
+    tabelas: {},
+  };
+  for (const { table_name } of tabelas) {
+    dump.tabelas[table_name] = await sql`select * from ${sql(table_name)}`;
+  }
+
+  await mkdir(dir, { recursive: true });
+  const nome = `backup-${dump.geradoEm.replace(/[:.]/g, "-")}.json`;
+  await writeFile(path.join(dir, nome), JSON.stringify(dump));
+  const resumo = Object.entries(dump.tabelas).map(([t, l]) => `${t}=${l.length}`).join(" ");
+  console.log(`backup: ${nome} (${resumo})`);
+
+  const antigos = (await readdir(dir)).filter((f) => /^backup-.*\.json$/.test(f)).sort();
+  for (const f of antigos.slice(0, Math.max(0, antigos.length - MANTER_BACKUPS))) {
+    await unlink(path.join(dir, f));
+  }
+}
 
 async function main() {
   const url = process.env.DATABASE_URL;
@@ -31,6 +64,9 @@ async function main() {
   const sql = postgres(url, { max: 1, connect_timeout: 10, onnotice: () => {} });
 
   try {
+    const dirBackup = process.env.BACKUP_DIR;
+    if (dirBackup) await backup(sql, dirBackup);
+
     await sql`
       create table if not exists _migracoes (
         arquivo     text primary key,

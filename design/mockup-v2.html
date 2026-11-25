@@ -1,0 +1,2839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Custos Carol v2 — Mockup Visual (Etapa 0)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    :root {
+      /* Paleta extraída de logo-carol.jpeg — Direção "Confeitaria Quente" */
+      --mustard: #DF9D2D;
+      --mustard-soft: #FBF0D9;
+      --mustard-ring: #E8B75C;
+      --chocolate: #3B1100;
+      --chocolate-soft: #4E1B07;
+      --heart: #A80204;
+      --heart-bg: #FCE7E6;
+      --caramel-light: #B48034;
+      --caramel-dark: #9D6D21;
+
+      /* Superfícies creme e tintas com contraste AA/AAA conferido */
+      --desk-bg: #EFE5D6;
+      --cream: #FDF8F0;
+      --surface: #FFFDF9;
+      --cream-warm: #F5EBDD;
+      --cream-deep: #EBDCC7;
+      --line: #E6D6C0;
+      --line-strong: #CEB89B;
+
+      --ink: #3B1100;
+      --ink-2: #5E3A28;
+      --muted: #6F4E3B;
+
+      /* Semântica de margens */
+      --good: #1F5E3B;
+      --good-bg: #E2F1E7;
+      --warn: #7D4800;
+      --warn-bg: #FCEFD5;
+      --crit: #A80204;
+      --crit-bg: #FCE7E6;
+
+      /* Tipografia */
+      --font-display: "Fraunces", Georgia, serif;
+      --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+      /* Sombras e raios */
+      --phone-shadow: 0 22px 48px -18px rgba(59, 17, 0, 0.34), 0 4px 14px -4px rgba(59, 17, 0, 0.14);
+      --card-shadow: 0 2px 8px -2px rgba(59, 17, 0, 0.06), 0 1px 2px rgba(59, 17, 0, 0.04);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background:
+        radial-gradient(circle at 12% 0%, rgba(223, 157, 45, 0.14), transparent 36%),
+        radial-gradient(circle at 88% 8%, rgba(180, 128, 52, 0.12), transparent 32%),
+        var(--desk-bg);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.45;
+    }
+
+    .tnum {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
+
+    /* ---------------- Cabeçalho de apresentação ---------------- */
+    .studio-head {
+      max-width: 1460px;
+      margin: 0 auto;
+      padding: 28px 28px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .studio-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .studio-logo {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      object-fit: cover;
+      border: 2px solid var(--mustard);
+      box-shadow: var(--card-shadow);
+      flex-shrink: 0;
+    }
+
+    .studio-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin-bottom: 3px;
+    }
+
+    .studio-eyebrow .dot-heart {
+      color: var(--heart);
+      font-size: 13px;
+      line-height: 1;
+    }
+
+    .studio-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.6vw, 32px);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .studio-sub {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: var(--ink-2);
+      max-width: 66ch;
+    }
+
+    .studio-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .view-toggle {
+      display: inline-flex;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 999px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .view-btn {
+      border: none;
+      background: transparent;
+      color: var(--ink-2);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .view-btn[aria-pressed="true"] {
+      background: var(--chocolate);
+      color: var(--cream);
+    }
+
+    /* Barra compacta de tokens & contraste AA */
+    .spec-strip {
+      max-width: 1460px;
+      margin: 0 auto 8px;
+      padding: 0 28px;
+    }
+
+    .spec-card {
+      background: rgba(255, 253, 249, 0.86);
+      border: 1px solid var(--line-strong);
+      border-radius: 18px;
+      padding: 12px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .swatches {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--ink-2);
+      font-weight: 600;
+    }
+
+    .swatch-dot {
+      width: 22px;
+      height: 22px;
+      border-radius: 7px;
+      border: 1px solid rgba(59, 17, 0, 0.18);
+      flex-shrink: 0;
+    }
+
+    .swatch code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      color: var(--ink);
+      background: var(--cream-warm);
+      padding: 1px 5px;
+      border-radius: 5px;
+    }
+
+    .aa-badges {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-2);
+    }
+
+    .aa-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* ---------------- Palco dos celulares ---------------- */
+    .stage {
+      padding: 20px 28px 56px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 32px 26px;
+      max-width: 1480px;
+      margin: 0 auto;
+    }
+
+    .stage.is-row {
+      max-width: none;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      overflow-x: auto;
+      padding: 20px 36px 56px;
+      scroll-snap-type: x proximity;
+    }
+
+    .phone-unit {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+
+    .phone-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      padding: 5px 14px;
+      border-radius: 999px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .phone-label span {
+      color: var(--caramel-dark);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Moldura do celular (viewport interna = 390px × 844px) */
+    .phone-frame {
+      width: 410px;
+      padding: 10px;
+      border-radius: 48px;
+      background: linear-gradient(145deg, #4A1B08 0%, #2B0D02 55%, #1D0801 100%);
+      box-shadow: var(--phone-shadow);
+      border: 1px solid rgba(255, 232, 200, 0.14);
+    }
+
+    .phone-screen {
+      width: 390px;
+      height: 844px;
+      background: var(--cream);
+      border-radius: 38px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      color: var(--ink);
+    }
+
+    /* Status bar */
+    .status-bar {
+      height: 36px;
+      padding: 10px 22px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .dynamic-island {
+      position: absolute;
+      left: 50%;
+      top: 9px;
+      transform: translateX(-50%);
+      width: 94px;
+      height: 22px;
+      border-radius: 999px;
+      background: #230A01;
+    }
+
+    .status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .phone-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 10px 16px 20px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--line-strong) transparent;
+    }
+
+    /* Indicador inferior iOS/Android */
+    .home-bar-wrap {
+      background: var(--surface);
+      padding: 2px 0 8px;
+      display: flex;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .home-bar-wrap--cream {
+      background: var(--cream);
+    }
+
+    .home-bar {
+      width: 124px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(59, 17, 0, 0.24);
+    }
+
+    /* ---------------- Barra de navegação inferior ---------------- */
+    .bottom-nav {
+      height: 66px;
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      align-items: center;
+      padding: 4px 6px 0;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 5;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      min-height: 50px;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      border-radius: 14px;
+      position: relative;
+    }
+
+    .nav-item svg {
+      width: 21px;
+      height: 21px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-item.is-active {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .nav-item.is-active .nav-icon-pill {
+      background: var(--mustard-soft);
+      border-radius: 999px;
+      padding: 3px 12px;
+      display: inline-flex;
+    }
+
+    .nav-item:not(.is-active) .nav-icon-pill {
+      padding: 3px 12px;
+      display: inline-flex;
+    }
+
+    /* Botão central em destaque: Vender */
+    .nav-sell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 2px;
+      min-height: 56px;
+      color: var(--ink);
+      font-size: 11.5px;
+      font-weight: 800;
+      margin-top: -10px;
+    }
+
+    .nav-sell-fab {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: var(--mustard);
+      color: var(--chocolate);
+      border: 3px solid var(--surface);
+      box-shadow: 0 6px 14px -4px rgba(59, 17, 0, 0.34);
+      display: grid;
+      place-items: center;
+    }
+
+    .nav-sell.is-active .nav-sell-fab {
+      outline: 2.5px solid var(--chocolate);
+      outline-offset: 1px;
+    }
+
+    .nav-sell-fab svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--chocolate);
+      fill: none;
+      stroke-width: 2.3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ---------------- Primitivos compartilhados das telas ---------------- */
+    .screen-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .screen-sub {
+      margin: 3px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .section-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 12px 0 7px;
+    }
+
+    .section-heading {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 13px 15px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge--good {
+      background: var(--good-bg);
+      color: var(--good);
+    }
+
+    .badge--warn {
+      background: var(--warn-bg);
+      color: var(--warn);
+    }
+
+    .badge--crit {
+      background: var(--crit-bg);
+      color: var(--crit);
+    }
+
+    .badge--cream {
+      background: var(--cream-warm);
+      color: var(--ink-2);
+    }
+
+    .btn-big {
+      width: 100%;
+      min-height: 52px;
+      border-radius: 16px;
+      border: none;
+      font-family: var(--font-sans);
+      font-size: 15.5px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      padding: 0 18px;
+      transition: transform 0.1s ease, filter 0.15s ease;
+    }
+
+    .btn-big:active {
+      transform: scale(0.985);
+    }
+
+    .btn-choco {
+      background: var(--chocolate);
+      color: var(--cream);
+      box-shadow: 0 8px 18px -8px rgba(59, 17, 0, 0.55);
+    }
+
+    .btn-mustard {
+      background: var(--mustard);
+      color: var(--chocolate);
+      box-shadow: 0 8px 18px -8px rgba(157, 109, 33, 0.55);
+    }
+
+    /* ---------------- TELA 1: LOGIN ---------------- */
+    .login-wrap {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100%;
+      padding: 18px 6px 14px;
+      background:
+        radial-gradient(circle at 50% 4%, rgba(223, 157, 45, 0.22), transparent 44%);
+    }
+
+    .login-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .login-logo-box {
+      width: 136px;
+      height: 136px;
+      border-radius: 30px;
+      padding: 4px;
+      background: linear-gradient(135deg, var(--mustard) 0%, var(--caramel-light) 100%);
+      box-shadow: 0 14px 30px -12px rgba(59, 17, 0, 0.35);
+      margin-bottom: 18px;
+    }
+
+    .login-logo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 26px;
+      display: block;
+    }
+
+    .login-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .login-sub {
+      margin: 6px 0 0;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 500;
+      max-width: 28ch;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 20px 18px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 18px 0 12px;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink-2);
+    }
+
+    .field-box {
+      min-height: 52px;
+      background: var(--cream);
+      border: 1.5px solid var(--line-strong);
+      border-radius: 14px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .field-box input {
+      border: none;
+      background: transparent;
+      width: 100%;
+      font-family: var(--font-sans);
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .field-toggle {
+      border: none;
+      background: var(--cream-warm);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border-radius: 10px;
+      min-height: 36px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .login-footer {
+      text-align: center;
+      font-size: 12.5px;
+      color: var(--muted);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .login-footer strong {
+      color: var(--ink-2);
+    }
+
+    /* ---------------- TELA 2: INÍCIO ---------------- */
+    .home-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .home-greeting {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .home-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      object-fit: cover;
+      border: 2px solid var(--mustard);
+      flex-shrink: 0;
+    }
+
+    .home-kicker {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .home-name {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 21px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+
+    .month-chip {
+      background: var(--cream-warm);
+      border: 1px solid var(--line-strong);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 11px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .hero-month {
+      background: linear-gradient(155deg, #491704 0%, var(--chocolate) 68%, #2B0B00 100%);
+      color: var(--cream);
+      border-radius: 20px;
+      padding: 14px 16px 13px;
+      box-shadow: 0 14px 28px -14px rgba(59, 17, 0, 0.55);
+      margin-bottom: 10px;
+    }
+
+    .hero-month-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .hero-month-label {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #E7D5BF;
+    }
+
+    .hero-margin-pill {
+      background: rgba(223, 157, 45, 0.22);
+      border: 1px solid rgba(247, 199, 110, 0.45);
+      color: #F7C76E;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 2.5px 9px;
+      border-radius: 999px;
+    }
+
+    .hero-profit {
+      margin: 4px 0 10px;
+      font-size: 31px;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      line-height: 1.08;
+      color: var(--cream);
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(253, 248, 240, 0.16);
+    }
+
+    .hero-stat-label {
+      font-size: 11.5px;
+      color: #E7D5BF;
+      font-weight: 500;
+    }
+
+    .hero-stat-val {
+      font-size: 17px;
+      font-weight: 700;
+      color: #F7C76E;
+      margin-top: 1px;
+    }
+
+    .hero-stat-sub {
+      font-size: 11px;
+      color: #DFC8AE;
+      margin-top: 1px;
+    }
+
+    .alert-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--caramel-dark);
+      border-radius: 15px;
+      padding: 10px 12px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .alert-card--warn {
+      background: #FFFBF2;
+      border-left-color: var(--mustard);
+    }
+
+    .alert-card--crit {
+      background: #FFF9F8;
+      border-left-color: var(--heart);
+    }
+
+    .alert-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .alert-msg {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.36;
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .alert-link {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--ink-2);
+      cursor: pointer;
+    }
+
+    .alerts-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .recent-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .recent-row {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .recent-main {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .recent-meta {
+      font-size: 11.5px;
+      color: var(--muted);
+    }
+
+    .recent-val {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: var(--good);
+      white-space: nowrap;
+    }
+
+    /* ---------------- TELA 3: PRODUTOS ---------------- */
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      margin: 9px 0 10px;
+    }
+
+    .filter-pill {
+      min-height: 34px;
+      padding: 0 13px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink-2);
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .filter-pill.is-active {
+      background: var(--chocolate);
+      border-color: var(--chocolate);
+      color: var(--cream);
+    }
+
+    .product-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 13px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .product-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .product-name {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: 16.5px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .product-metrics {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr 1fr;
+      gap: 8px;
+      background: var(--cream);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 7px 9px;
+    }
+
+    .pm-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .pm-value {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--ink);
+      margin-top: 1px;
+    }
+
+    .pm-sub {
+      font-size: 10.5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .product-hint {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--ink-2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* ---------------- TELA 4: DETALHE DO PRODUTO ---------------- */
+    .detail-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .back-btn {
+      min-height: 36px;
+      padding: 0 11px 0 8px;
+      border-radius: 11px;
+      background: var(--cream-warm);
+      border: 1px solid var(--line-strong);
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .detail-switcher {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+
+    .detail-chip {
+      flex: 0 0 auto;
+      min-height: 34px;
+      padding: 0 12px;
+      border-radius: 999px;
+      border: 1px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink-2);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .detail-chip[aria-selected="true"] {
+      background: var(--mustard);
+      border-color: var(--chocolate);
+      color: var(--chocolate);
+    }
+
+    .detail-kpis {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin: 8px 0 9px;
+    }
+
+    .kpi-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 9px 12px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .kpi-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+      margin: 2px 0;
+      line-height: 1.1;
+    }
+
+    .kpi-foot {
+      font-size: 11px;
+      color: var(--ink-2);
+      font-weight: 600;
+    }
+
+    .stacked-bar {
+      height: 11px;
+      border-radius: 999px;
+      overflow: hidden;
+      display: flex;
+      gap: 2px;
+      background: var(--cream-warm);
+      margin: 7px 0 9px;
+    }
+
+    .stacked-seg {
+      height: 100%;
+    }
+
+    .cost-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cost-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 13px;
+    }
+
+    .cost-row-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+
+    .cost-swatch {
+      width: 11px;
+      height: 11px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .cost-name {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .cost-note {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+    }
+
+    .cost-row-right {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .cost-val {
+      font-weight: 800;
+      color: var(--ink);
+      font-size: 13.5px;
+    }
+
+    .cost-pct {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      display: block;
+    }
+
+    .channel-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .channel-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 10px 11px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .channel-card--highlight {
+      border-color: var(--caramel-light);
+      background: #FFFBF4;
+    }
+
+    .channel-title {
+      font-size: 12.5px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .channel-tax {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 2px 0 5px;
+      line-height: 1.25;
+    }
+
+    .channel-price {
+      font-size: 19.5px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+
+    .channel-diff {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--warn);
+      margin-top: 3px;
+    }
+
+    /* ---------------- TELA 5: VENDER ---------------- */
+    .sell-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .sell-step-label {
+      font-size: 11.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-2);
+      margin: 9px 0 5px;
+    }
+
+    .sell-step-label:first-of-type {
+      margin-top: 2px;
+    }
+
+    .sell-product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .sell-prod-btn {
+      min-height: 56px;
+      border-radius: 15px;
+      border: 1.5px solid var(--line-strong);
+      background: var(--surface);
+      padding: 8px 11px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-family: var(--font-sans);
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .sell-prod-btn.is-selected {
+      background: var(--mustard-soft);
+      border: 2.5px solid var(--chocolate);
+    }
+
+    .sell-prod-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .sell-prod-price {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--ink-2);
+    }
+
+    .big-stepper {
+      background: var(--surface);
+      border: 1.5px solid var(--line-strong);
+      border-radius: 16px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stepper-btn {
+      width: 52px;
+      height: 46px;
+      border-radius: 12px;
+      border: none;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-sans);
+    }
+
+    .stepper-btn--minus {
+      background: var(--cream-warm);
+      color: var(--chocolate);
+    }
+
+    .stepper-btn--plus {
+      background: var(--mustard);
+      color: var(--chocolate);
+    }
+
+    .stepper-readout {
+      text-align: center;
+    }
+
+    .stepper-readout strong {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1;
+    }
+
+    .stepper-readout span {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-left: 4px;
+    }
+
+    .choice-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .choice-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .choice-btn {
+      min-height: 44px;
+      border-radius: 13px;
+      border: 1.5px solid var(--line-strong);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 5px 7px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.2;
+    }
+
+    .choice-btn small {
+      font-size: 10.5px;
+      font-weight: 600;
+      opacity: 0.85;
+    }
+
+    .choice-btn.is-selected {
+      background: var(--chocolate);
+      border-color: var(--chocolate);
+      color: var(--cream);
+    }
+
+    .sell-summary {
+      margin: 10px 0 9px;
+      background: var(--cream-warm);
+      border: 1px solid var(--line-strong);
+      border-radius: 15px;
+      padding: 9px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .sell-unit-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--ink);
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      padding: 3px 8px;
+      margin-top: 2px;
+    }
+
+    .sell-total-box {
+      text-align: right;
+    }
+
+    .sell-total-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--ink);
+      line-height: 1.1;
+    }
+
+    .sell-profit-tag {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--good);
+    }
+
+    .sell-toast {
+      margin-top: 8px;
+      background: var(--good-bg);
+      color: var(--good);
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 700;
+      text-align: center;
+      display: none;
+    }
+
+    .sell-toast.is-visible {
+      display: block;
+    }
+
+    /* ---------------- TELA 6: PRODUZIR ---------------- */
+    .produce-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 9px;
+    }
+
+    .batch-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+
+    .batch-row {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      padding: 7px 9px 7px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .batch-info strong {
+      display: block;
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .batch-info span {
+      font-size: 11.5px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .mini-stepper {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .mini-step-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 11px;
+      border: none;
+      font-size: 19px;
+      font-weight: 800;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-family: var(--font-sans);
+    }
+
+    .mini-step-btn--minus {
+      background: var(--cream-warm);
+      color: var(--chocolate);
+    }
+
+    .mini-step-btn--plus {
+      background: var(--mustard);
+      color: var(--chocolate);
+    }
+
+    .mini-step-val {
+      min-width: 22px;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--ink);
+    }
+
+    .produce-total-banner {
+      background: var(--chocolate);
+      color: var(--cream);
+      border-radius: 16px;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      box-shadow: 0 10px 20px -12px rgba(59, 17, 0, 0.55);
+    }
+
+    .produce-total-label {
+      font-size: 12px;
+      color: #E7D5BF;
+      font-weight: 700;
+    }
+
+    .produce-total-sub {
+      font-size: 10.5px;
+      color: #DFC8AE;
+      display: block;
+      margin-top: 2px;
+      white-space: nowrap;
+    }
+
+    .produce-total-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: #F7C76E;
+      white-space: nowrap;
+    }
+
+    .shopping-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px 13px;
+      box-shadow: var(--card-shadow);
+    }
+
+    .shopping-subhead {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 8px 0 4px;
+    }
+
+    .shopping-subhead:first-child {
+      margin-top: 2px;
+    }
+
+    .shop-item {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+
+    .shop-item:last-child {
+      border-bottom: none;
+      padding-bottom: 2px;
+    }
+
+    .shop-item-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .shop-item-pack {
+      font-size: 11.5px;
+      color: var(--ink-2);
+      font-weight: 500;
+      display: block;
+    }
+
+    .shop-item-price {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    @media (max-width: 520px) {
+      .studio-head,
+      .spec-strip,
+      .stage {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .phone-frame {
+        transform-origin: top center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="studio-head">
+    <div class="studio-brand">
+      <img class="studio-logo" src="logo-carol.jpeg" alt="Logo Carol Brownie" />
+      <div>
+        <div class="studio-eyebrow">
+          <span class="dot-heart" aria-hidden="true">&#10084;</span>
+          Etapa 0 · Mockup visual mobile-first
+        </div>
+        <h1 class="studio-title">Custos Carol v2 — Confeitaria Quente</h1>
+        <p class="studio-sub">
+          6 telas em molduras de celular (390 &times; 844 px), desenhadas para uso com uma mão na cozinha e na feira.
+          Valores reais da v1 somados aos novos custos de forno, mão de obra e perda.
+        </p>
+      </div>
+    </div>
+
+    <div class="studio-controls">
+      <div class="view-toggle" role="group" aria-label="Disposição das telas">
+        <button type="button" class="view-btn" id="btn-grid" aria-pressed="true">Grade lado a lado</button>
+        <button type="button" class="view-btn" id="btn-row" aria-pressed="false">Faixa única (6 em linha)</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="spec-strip" aria-label="Paleta e acessibilidade">
+    <div class="spec-card">
+      <div class="swatches">
+        <span class="swatch"><span class="swatch-dot" style="background:#FDF8F0"></span>Creme <code>#FDF8F0</code></span>
+        <span class="swatch"><span class="swatch-dot" style="background:#3B1100"></span>Chocolate <code>#3B1100</code></span>
+        <span class="swatch"><span class="swatch-dot" style="background:#DF9D2D"></span>Mostarda <code>#DF9D2D</code></span>
+        <span class="swatch"><span class="swatch-dot" style="background:#B48034"></span>Caramelo <code>#B48034</code></span>
+        <span class="swatch"><span class="swatch-dot" style="background:#A80204"></span>Coração <code>#A80204</code></span>
+      </div>
+      <div class="aa-badges">
+        <span>Contraste AA/AAA conferido:</span>
+        <span class="aa-pill" style="background:#DF9D2D;color:#3B1100;">Chocolate em Mostarda · 7,1:1</span>
+        <span class="aa-pill" style="background:#FDF8F0;color:#3B1100;border:1px solid #CEB89B;">Chocolate em Creme · 15,7:1</span>
+        <span class="aa-pill" style="background:#FCE7E6;color:#A80204;">Coração em Rosa-creme · 6,6:1</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="stage" id="stage">
+    <!-- ==================== TELA 1: LOGIN ==================== -->
+    <article class="phone-unit">
+      <div class="phone-label"><span>01</span> Login</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <div class="login-wrap">
+              <div class="login-hero">
+                <div class="login-logo-box">
+                  <img src="logo-carol.jpeg" alt="Carol Brownie" />
+                </div>
+                <h2 class="login-title">Bom trabalho, Carol!</h2>
+                <p class="login-sub">Custos, vendas e fornadas organizados no seu celular.</p>
+              </div>
+
+              <form class="login-card" onsubmit="return false;">
+                <div class="field-group">
+                  <label class="field-label" for="login-user">Usuário</label>
+                  <div class="field-box">
+                    <input id="login-user" type="text" value="carol" autocomplete="username" />
+                  </div>
+                </div>
+
+                <div class="field-group">
+                  <label class="field-label" for="login-pass">Senha</label>
+                  <div class="field-box">
+                    <input id="login-pass" type="password" value="brownie2026" autocomplete="current-password" />
+                    <button type="button" class="field-toggle" id="toggle-pass">Mostrar</button>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-big btn-choco" id="login-submit">
+                  Entrar
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </button>
+              </form>
+
+              <div class="login-footer">
+                <span>Acesso da <strong>Carol</strong> e do <strong>Renam</strong></span>
+                <span><span style="color:var(--heart);">&#10084;</span> Carol Brownie · cada alteração de preço fica registrada</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="home-bar-wrap home-bar-wrap--cream">
+            <div class="home-bar"></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ==================== TELA 2: INÍCIO ==================== -->
+    <article class="phone-unit">
+      <div class="phone-label"><span>02</span> Início</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <div class="home-top">
+              <div class="home-greeting">
+                <img class="home-avatar" src="logo-carol.jpeg" alt="Carol Brownie" />
+                <div>
+                  <div class="home-kicker">Cozinha aberta</div>
+                  <h2 class="home-name">Olá, Carol</h2>
+                </div>
+              </div>
+              <div class="month-chip">Novembro 2026</div>
+            </div>
+
+            <section class="hero-month" aria-label="Resumo do mês">
+              <div class="hero-month-head">
+                <span class="hero-month-label">Lucro líquido no mês</span>
+                <span class="hero-margin-pill tnum">Margem 49%</span>
+              </div>
+              <div class="hero-profit tnum">R$ 1.542,80</div>
+              <div class="hero-grid">
+                <div>
+                  <div class="hero-stat-label">Faturamento</div>
+                  <div class="hero-stat-val tnum">R$ 3.148,00</div>
+                  <div class="hero-stat-sub">Encomenda + Feira</div>
+                </div>
+                <div>
+                  <div class="hero-stat-label">Vendidos no mês</div>
+                  <div class="hero-stat-val tnum">242 un</div>
+                  <div class="hero-stat-sub tnum">154 WhatsApp · 88 feira</div>
+                </div>
+              </div>
+            </section>
+
+            <button type="button" class="btn-big btn-mustard" onclick="document.getElementById('phone-vender').scrollIntoView({behavior:'smooth',inline:'center'})">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>
+              Registrar venda agora
+            </button>
+
+            <div class="section-row">
+              <h3 class="section-heading">Alertas de margem</h3>
+              <span class="badge badge--warn tnum">2 avisos</span>
+            </div>
+
+            <div class="alerts-stack">
+              <div class="alert-card alert-card--warn">
+                <div class="alert-top">
+                  <span class="badge badge--warn">Insumo subiu 18%</span>
+                  <span class="alert-link" data-jump-detail="nutella">Ver Nutella &rarr;</span>
+                </div>
+                <p class="alert-msg">
+                  O creme de avelã subiu 18%: margem do Brownie Nutella caiu de 52% para 41%.
+                </p>
+              </div>
+
+              <div class="alert-card alert-card--crit">
+                <div class="alert-top">
+                  <span class="badge badge--crit">&#10084; Abaixo de 35%</span>
+                  <span class="alert-link" data-jump-detail="cookie">Rever preço &rarr;</span>
+                </div>
+                <p class="alert-msg">
+                  Brownie Cookie está com 34% de margem. Sugerido: R$ 18,00 na encomenda.
+                </p>
+              </div>
+            </div>
+
+            <div class="section-row">
+              <h3 class="section-heading">Últimas vendas de hoje</h3>
+            </div>
+
+            <div class="recent-list">
+              <div class="recent-row">
+                <div>
+                  <div class="recent-main">6 &times; Brownie Tradicional</div>
+                  <div class="recent-meta tnum">14:20 · Encomenda · Pix</div>
+                </div>
+                <div class="recent-val tnum">+R$ 69,00</div>
+              </div>
+              <div class="recent-row">
+                <div>
+                  <div class="recent-main">4 &times; Brownie Nutella</div>
+                  <div class="recent-meta tnum">11:05 · Encomenda · Pix</div>
+                </div>
+                <div class="recent-val tnum">+R$ 56,00</div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegação principal">
+            <span class="nav-item is-active">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+              Início
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></span>
+              Produtos
+            </span>
+            <span class="nav-sell">
+              <span class="nav-sell-fab"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+              Vender
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9a6 6 0 0 1 12 0v10"/><path d="M10 13h4"/></svg></span>
+              Produzir
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>
+              Mais
+            </span>
+          </nav>
+          <div class="home-bar-wrap"><div class="home-bar"></div></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ==================== TELA 3: PRODUTOS ==================== -->
+    <article class="phone-unit">
+      <div class="phone-label"><span>03</span> Produtos</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <h2 class="screen-title">Produtos</h2>
+            <p class="screen-sub">Custo completo (insumos, forno, mão de obra e perda).</p>
+
+            <div class="filter-pills">
+              <span class="filter-pill is-active tnum">Todos (4)</span>
+              <span class="filter-pill tnum">Atenção (2)</span>
+              <span class="filter-pill">Saudáveis</span>
+            </div>
+
+            <div class="product-list">
+              <div class="product-card">
+                <div class="product-card-top">
+                  <h3 class="product-name">Brownie Redvelvet</h3>
+                  <span class="badge badge--good tnum">61% · Boa</span>
+                </div>
+                <div class="product-metrics">
+                  <div>
+                    <div class="pm-label">Custo/un</div>
+                    <div class="pm-value tnum">R$ 5,26</div>
+                    <div class="pm-sub tnum">direto R$ 3,20</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Encomenda</div>
+                    <div class="pm-value tnum">R$ 13,50</div>
+                    <div class="pm-sub tnum">margem 61%</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Feira</div>
+                    <div class="pm-value tnum">R$ 14,00</div>
+                    <div class="pm-sub tnum">margem 60%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="product-card">
+                <div class="product-card-top">
+                  <h3 class="product-name">Brownie Tradicional</h3>
+                  <span class="badge badge--good tnum">52% · Boa</span>
+                </div>
+                <div class="product-metrics">
+                  <div>
+                    <div class="pm-label">Custo/un</div>
+                    <div class="pm-value tnum">R$ 5,57</div>
+                    <div class="pm-sub tnum">direto R$ 3,66</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Encomenda</div>
+                    <div class="pm-value tnum">R$ 11,50</div>
+                    <div class="pm-sub tnum">margem 52%</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Feira</div>
+                    <div class="pm-value tnum">R$ 12,00</div>
+                    <div class="pm-sub tnum">margem 50%</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="product-card">
+                <div class="product-card-top">
+                  <h3 class="product-name">Brownie Nutella</h3>
+                  <span class="badge badge--warn tnum">41% · Atenção</span>
+                </div>
+                <div class="product-metrics">
+                  <div>
+                    <div class="pm-label">Custo/un</div>
+                    <div class="pm-value tnum">R$ 8,23</div>
+                    <div class="pm-sub tnum">direto R$ 4,86</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Encomenda</div>
+                    <div class="pm-value tnum">R$ 14,00</div>
+                    <div class="pm-sub tnum">margem 41%</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Feira</div>
+                    <div class="pm-value tnum">R$ 14,00</div>
+                    <div class="pm-sub tnum">margem 37%</div>
+                  </div>
+                </div>
+                <div class="product-hint">
+                  <span>Creme de avelã +18% · sugerido R$ 16,50</span>
+                  <span class="alert-link" data-jump-detail="nutella">Detalhe &rsaquo;</span>
+                </div>
+              </div>
+
+              <div class="product-card">
+                <div class="product-card-top">
+                  <h3 class="product-name">Brownie Cookie</h3>
+                  <span class="badge badge--crit tnum">34% · Baixa</span>
+                </div>
+                <div class="product-metrics">
+                  <div>
+                    <div class="pm-label">Custo/un</div>
+                    <div class="pm-value tnum">R$ 8,95</div>
+                    <div class="pm-sub tnum">direto R$ 4,58</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Encomenda</div>
+                    <div class="pm-value tnum">R$ 13,50</div>
+                    <div class="pm-sub tnum">margem 34%</div>
+                  </div>
+                  <div>
+                    <div class="pm-label">Feira</div>
+                    <div class="pm-value tnum">R$ 14,00</div>
+                    <div class="pm-sub tnum">margem 32%</div>
+                  </div>
+                </div>
+                <div class="product-hint">
+                  <span style="color:var(--crit);">Abaixo de 35% · sugerido R$ 18,00</span>
+                  <span class="alert-link" data-jump-detail="cookie">Detalhe &rsaquo;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegação principal">
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+              Início
+            </span>
+            <span class="nav-item is-active">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></span>
+              Produtos
+            </span>
+            <span class="nav-sell">
+              <span class="nav-sell-fab"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+              Vender
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9a6 6 0 0 1 12 0v10"/><path d="M10 13h4"/></svg></span>
+              Produzir
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>
+              Mais
+            </span>
+          </nav>
+          <div class="home-bar-wrap"><div class="home-bar"></div></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ==================== TELA 4: DETALHE DO PRODUTO ==================== -->
+    <article class="phone-unit" id="phone-detalhe">
+      <div class="phone-label"><span>04</span> Detalhe do produto</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <div class="detail-topbar">
+              <span class="back-btn">&lsaquo; Produtos</span>
+              <span class="badge badge--cream">Editar receita</span>
+            </div>
+
+            <div class="detail-switcher" role="tablist" aria-label="Escolher produto para ver detalhe">
+              <button type="button" class="detail-chip" data-prod="nutella" aria-selected="true">Nutella</button>
+              <button type="button" class="detail-chip" data-prod="tradicional" aria-selected="false">Tradicional</button>
+              <button type="button" class="detail-chip" data-prod="redvelvet" aria-selected="false">Redvelvet</button>
+              <button type="button" class="detail-chip" data-prod="cookie" aria-selected="false">Cookie</button>
+            </div>
+
+            <h2 class="screen-title" id="det-title">Brownie Nutella</h2>
+            <p class="screen-sub tnum" id="det-sub">Lote de 12 unidades · ~11,4 boas (5% de perda)</p>
+
+            <div class="detail-kpis">
+              <div class="kpi-box">
+                <div class="kpi-label">Custo completo / un</div>
+                <div class="kpi-num tnum" id="det-cost">R$ 8,23</div>
+                <div class="kpi-foot tnum" id="det-direct">Direto: R$ 4,86 / un</div>
+              </div>
+              <div class="kpi-box">
+                <div class="kpi-label">Margem atual</div>
+                <div class="kpi-num tnum" id="det-margin">41%</div>
+                <div class="kpi-foot" id="det-margin-pill"><span class="badge badge--warn tnum" style="padding:2px 8px;font-size:11px;">Cobra R$ 14,00</span></div>
+              </div>
+            </div>
+
+            <section class="card" aria-label="Composição do custo">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <h3 class="section-heading" style="font-size:15.5px;">De onde vem o custo</h3>
+                <span class="tnum" style="font-size:12px;color:var(--muted);font-weight:700;" id="det-lote-total">100% · R$ 8,23/un</span>
+              </div>
+
+              <div class="stacked-bar" id="det-bar" aria-hidden="true">
+                <div class="stacked-seg" style="width:46.3%;background:#3B1100;"></div>
+                <div class="stacked-seg" style="width:33.4%;background:#B48034;"></div>
+                <div class="stacked-seg" style="width:12.9%;background:#DF9D2D;"></div>
+                <div class="stacked-seg" style="width:5.0%;background:#A80204;"></div>
+                <div class="stacked-seg" style="width:2.4%;background:#6F4E3B;"></div>
+              </div>
+
+              <div class="cost-rows" id="det-rows">
+                <div class="cost-row">
+                  <div class="cost-row-left">
+                    <span class="cost-swatch" style="background:#3B1100;"></span>
+                    <div>
+                      <span class="cost-name">Ingredientes</span>
+                      <span class="cost-note">Creme de avelã, cacau, ovos e base</span>
+                    </div>
+                  </div>
+                  <div class="cost-row-right">
+                    <span class="cost-val tnum">R$ 3,81</span>
+                    <span class="cost-pct tnum">46,3%</span>
+                  </div>
+                </div>
+
+                <div class="cost-row">
+                  <div class="cost-row-left">
+                    <span class="cost-swatch" style="background:#B48034;"></span>
+                    <div>
+                      <span class="cost-name">Mão de obra</span>
+                      <span class="cost-note tnum">66 min no lote (R$ 30/h)</span>
+                    </div>
+                  </div>
+                  <div class="cost-row-right">
+                    <span class="cost-val tnum">R$ 2,75</span>
+                    <span class="cost-pct tnum">33,4%</span>
+                  </div>
+                </div>
+
+                <div class="cost-row">
+                  <div class="cost-row-left">
+                    <span class="cost-swatch" style="background:#DF9D2D;"></span>
+                    <div>
+                      <span class="cost-name">Embalagem</span>
+                      <span class="cost-note">Caixa, tag, saquinho e sizal</span>
+                    </div>
+                  </div>
+                  <div class="cost-row-right">
+                    <span class="cost-val tnum">R$ 1,06</span>
+                    <span class="cost-pct tnum">12,9%</span>
+                  </div>
+                </div>
+
+                <div class="cost-row">
+                  <div class="cost-row-left">
+                    <span class="cost-swatch" style="background:#A80204;"></span>
+                    <div>
+                      <span class="cost-name">Perda (5%)</span>
+                      <span class="cost-note">Aparas, quebra e prova</span>
+                    </div>
+                  </div>
+                  <div class="cost-row-right">
+                    <span class="cost-val tnum">R$ 0,41</span>
+                    <span class="cost-pct tnum">5,0%</span>
+                  </div>
+                </div>
+
+                <div class="cost-row">
+                  <div class="cost-row-left">
+                    <span class="cost-swatch" style="background:#6F4E3B;"></span>
+                    <div>
+                      <span class="cost-name">Forno (gás)</span>
+                      <span class="cost-note tnum">32 min a R$ 4,50/h</span>
+                    </div>
+                  </div>
+                  <div class="cost-row-right">
+                    <span class="cost-val tnum">R$ 0,20</span>
+                    <span class="cost-pct tnum">2,4%</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="section-row" style="margin-top:10px;margin-bottom:4px;">
+              <h3 class="section-heading" style="font-size:15.5px;">Preço sugerido por canal</h3>
+              <span class="badge badge--cream tnum">Alvo 50%</span>
+            </div>
+
+            <div class="channel-cards">
+              <div class="channel-card channel-card--highlight">
+                <div class="channel-title">Encomenda</div>
+                <div class="channel-tax">WhatsApp · Pix 0% taxa</div>
+                <div class="channel-price tnum" id="det-sug-enc">R$ 16,50</div>
+                <div class="channel-diff tnum" id="det-diff-enc">Hoje R$ 14,00 (+R$ 2,50)</div>
+              </div>
+              <div class="channel-card">
+                <div class="channel-title">Feira / Evento</div>
+                <div class="channel-tax">Cartão ~3% + R$ 0,40/un</div>
+                <div class="channel-price tnum" id="det-sug-feira">R$ 17,50</div>
+                <div class="channel-diff tnum" id="det-diff-feira">Hoje R$ 14,00 (+R$ 3,50)</div>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegação principal">
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+              Início
+            </span>
+            <span class="nav-item is-active">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></span>
+              Produtos
+            </span>
+            <span class="nav-sell">
+              <span class="nav-sell-fab"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+              Vender
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9a6 6 0 0 1 12 0v10"/><path d="M10 13h4"/></svg></span>
+              Produzir
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>
+              Mais
+            </span>
+          </nav>
+          <div class="home-bar-wrap"><div class="home-bar"></div></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ==================== TELA 5: VENDER ==================== -->
+    <article class="phone-unit" id="phone-vender">
+      <div class="phone-label"><span>05</span> Vender</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <div class="sell-head">
+              <div>
+                <h2 class="screen-title">Registrar venda</h2>
+                <p class="screen-sub">Toques grandes · custo do dia salvo na hora</p>
+              </div>
+              <span class="badge badge--cream tnum">25 nov</span>
+            </div>
+
+            <div class="sell-step-label">1. Produto</div>
+            <div class="sell-product-grid" id="sell-products">
+              <button type="button" class="sell-prod-btn is-selected" data-id="tradicional">
+                <span class="sell-prod-name">Tradicional <span>&#10003;</span></span>
+                <span class="sell-prod-price tnum">R$ 11,50</span>
+              </button>
+              <button type="button" class="sell-prod-btn" data-id="nutella">
+                <span class="sell-prod-name">Nutella</span>
+                <span class="sell-prod-price tnum">R$ 14,00</span>
+              </button>
+              <button type="button" class="sell-prod-btn" data-id="redvelvet">
+                <span class="sell-prod-name">Redvelvet</span>
+                <span class="sell-prod-price tnum">R$ 13,50</span>
+              </button>
+              <button type="button" class="sell-prod-btn" data-id="cookie">
+                <span class="sell-prod-name">Cookie</span>
+                <span class="sell-prod-price tnum">R$ 13,50</span>
+              </button>
+            </div>
+
+            <div class="sell-step-label">2. Quantidade</div>
+            <div class="big-stepper">
+              <button type="button" class="stepper-btn stepper-btn--minus" id="sell-minus" aria-label="Diminuir quantidade">&minus;</button>
+              <div class="stepper-readout">
+                <strong class="tnum" id="sell-qty">6</strong><span>unidades</span>
+              </div>
+              <button type="button" class="stepper-btn stepper-btn--plus" id="sell-plus" aria-label="Aumentar quantidade">+</button>
+            </div>
+
+            <div class="sell-step-label">3. Canal</div>
+            <div class="choice-2" id="sell-channels">
+              <button type="button" class="choice-btn is-selected" data-channel="encomenda">
+                Encomenda
+                <small>WhatsApp</small>
+              </button>
+              <button type="button" class="choice-btn" data-channel="feira">
+                Feira
+                <small>Feira de Sábado</small>
+              </button>
+            </div>
+
+            <div class="sell-step-label">4. Pagamento</div>
+            <div class="choice-4" id="sell-payments">
+              <button type="button" class="choice-btn is-selected" data-pay="pix">Pix<small>0%</small></button>
+              <button type="button" class="choice-btn" data-pay="debito">Débito<small>1,9%</small></button>
+              <button type="button" class="choice-btn" data-pay="credito">Crédito<small>4,2%</small></button>
+              <button type="button" class="choice-btn" data-pay="dinheiro">Dinheiro<small>0%</small></button>
+            </div>
+
+            <div class="sell-summary">
+              <div>
+                <div style="font-size:12px;font-weight:700;color:var(--ink-2);">Preço preenchido</div>
+                <div class="sell-unit-pill tnum" id="sell-unit-price">R$ 11,50 / un &#9998;</div>
+              </div>
+              <div class="sell-total-box">
+                <div class="sell-total-val tnum" id="sell-total">R$ 69,00</div>
+                <div class="sell-profit-tag tnum" id="sell-profit">Lucro prev. R$ 35,58</div>
+              </div>
+            </div>
+
+            <button type="button" class="btn-big btn-mustard" id="sell-confirm">
+              <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span id="sell-confirm-txt">Confirmar venda · R$ 69,00</span>
+            </button>
+
+            <div class="sell-toast" id="sell-toast" role="status">
+              Venda registrada! Custo do dia salvo: R$ 5,57/un.
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegação principal">
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+              Início
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></span>
+              Produtos
+            </span>
+            <span class="nav-sell is-active">
+              <span class="nav-sell-fab"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+              Vender
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9a6 6 0 0 1 12 0v10"/><path d="M10 13h4"/></svg></span>
+              Produzir
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>
+              Mais
+            </span>
+          </nav>
+          <div class="home-bar-wrap"><div class="home-bar"></div></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ==================== TELA 6: PRODUZIR ==================== -->
+    <article class="phone-unit">
+      <div class="phone-label"><span>06</span> Produzir</div>
+      <div class="phone-frame">
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span class="tnum">18:07</span>
+            <div class="dynamic-island" aria-hidden="true"></div>
+            <div class="status-icons tnum"><span>5G</span><span>92%</span></div>
+          </div>
+
+          <div class="phone-scroll">
+            <div class="produce-head">
+              <div>
+                <h2 class="screen-title">Produzir</h2>
+                <p class="screen-sub">Quantas fornadas de cada?</p>
+              </div>
+              <span class="badge badge--cream tnum" id="prod-summary-pill">5 fornadas · 60 un</span>
+            </div>
+
+            <div class="batch-list" id="batch-list">
+              <div class="batch-row" data-recipe="tradicional">
+                <div class="batch-info">
+                  <strong>Brownie Tradicional</strong>
+                  <span class="tnum" data-units>36 brownies (12/fornada)</span>
+                </div>
+                <div class="mini-stepper">
+                  <button type="button" class="mini-step-btn mini-step-btn--minus" aria-label="Diminuir Tradicional">&minus;</button>
+                  <span class="mini-step-val tnum" data-count>3</span>
+                  <button type="button" class="mini-step-btn mini-step-btn--plus" aria-label="Aumentar Tradicional">+</button>
+                </div>
+              </div>
+
+              <div class="batch-row" data-recipe="nutella">
+                <div class="batch-info">
+                  <strong>Brownie Nutella</strong>
+                  <span class="tnum" data-units>24 brownies (12/fornada)</span>
+                </div>
+                <div class="mini-stepper">
+                  <button type="button" class="mini-step-btn mini-step-btn--minus" aria-label="Diminuir Nutella">&minus;</button>
+                  <span class="mini-step-val tnum" data-count>2</span>
+                  <button type="button" class="mini-step-btn mini-step-btn--plus" aria-label="Aumentar Nutella">+</button>
+                </div>
+              </div>
+
+              <div class="batch-row" data-recipe="redvelvet">
+                <div class="batch-info">
+                  <strong>Brownie Redvelvet</strong>
+                  <span class="tnum" data-units>0 brownies (12/fornada)</span>
+                </div>
+                <div class="mini-stepper">
+                  <button type="button" class="mini-step-btn mini-step-btn--minus" aria-label="Diminuir Redvelvet">&minus;</button>
+                  <span class="mini-step-val tnum" data-count>0</span>
+                  <button type="button" class="mini-step-btn mini-step-btn--plus" aria-label="Aumentar Redvelvet">+</button>
+                </div>
+              </div>
+
+              <div class="batch-row" data-recipe="cookie">
+                <div class="batch-info">
+                  <strong>Brownie Cookie</strong>
+                  <span class="tnum" data-units>0 brownies (12/fornada)</span>
+                </div>
+                <div class="mini-stepper">
+                  <button type="button" class="mini-step-btn mini-step-btn--minus" aria-label="Diminuir Cookie">&minus;</button>
+                  <span class="mini-step-val tnum" data-count>0</span>
+                  <button type="button" class="mini-step-btn mini-step-btn--plus" aria-label="Aumentar Cookie">+</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="produce-total-banner">
+              <div>
+                <div class="produce-total-label">Total previsto das compras</div>
+                <span class="produce-total-sub tnum" id="prod-breakdown">Insumos R$ 240,40 · Embal. R$ 118,00</span>
+              </div>
+              <div class="produce-total-val tnum" id="prod-total">R$ 358,40</div>
+            </div>
+
+            <div class="section-row" style="margin:4px 0 8px;">
+              <h3 class="section-heading" style="font-size:15.5px;">Lista de compras</h3>
+              <span class="badge badge--cream">Arredondada p/ pacote</span>
+            </div>
+
+            <div class="shopping-card" id="shopping-list">
+              <div class="shopping-subhead">Ingredientes</div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Cacau 70%</span>
+                  <span class="shop-item-pack tnum">405 g &rarr; 1 pacote de 500 g</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 30,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Creme de avelã (Nutella)</span>
+                  <span class="shop-item-pack tnum">600 g &rarr; 2 potes de 350 g</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 70,80</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Cacau gotas meio amargo</span>
+                  <span class="shop-item-pack tnum">1.980 g &rarr; 1 pacote de 2 kg</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 62,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Cacau 50%</span>
+                  <span class="shop-item-pack tnum">200 g &rarr; 1 pacote de 1 kg</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 35,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Ovo</span>
+                  <span class="shop-item-pack tnum">20 un &rarr; 1 bandeja de 20 un</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 18,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Margarina</span>
+                  <span class="shop-item-pack tnum">500 g &rarr; 1 pote de 1 kg</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 13,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Açúcar</span>
+                  <span class="shop-item-pack tnum">1.290 g &rarr; 2 pacotes de 1 kg</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 7,60</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Farinha</span>
+                  <span class="shop-item-pack tnum">600 g &rarr; 1 pacote de 1 kg</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 4,00</span>
+              </div>
+
+              <div class="shopping-subhead">Embalagens (60 unidades)</div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Tag</span>
+                  <span class="shop-item-pack tnum">60 un &rarr; 1 pacote de 200 un</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 50,00</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Caixa</span>
+                  <span class="shop-item-pack tnum">60 un &rarr; 3 pacotes de 25 un</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 37,50</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Saquinho</span>
+                  <span class="shop-item-pack tnum">60 un &rarr; 1 pacote de 100 un</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 20,50</span>
+              </div>
+              <div class="shop-item">
+                <div>
+                  <span class="shop-item-name">Sizal</span>
+                  <span class="shop-item-pack tnum">60 m &rarr; 1 rolo de 100 m</span>
+                </div>
+                <span class="shop-item-price tnum">R$ 10,00</span>
+              </div>
+            </div>
+          </div>
+
+          <nav class="bottom-nav" aria-label="Navegação principal">
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1V9.5"/></svg></span>
+              Início
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="2"/><rect x="13" y="4" width="8" height="7" rx="2"/><rect x="3" y="13" width="8" height="7" rx="2"/><rect x="13" y="13" width="8" height="7" rx="2"/></svg></span>
+              Produtos
+            </span>
+            <span class="nav-sell">
+              <span class="nav-sell-fab"><svg viewBox="0 0 24 24"><path d="M6 7h12l1 13H5L6 7Z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg></span>
+              Vender
+            </span>
+            <span class="nav-item is-active">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><path d="M4 19h16"/><path d="M6 19V9a6 6 0 0 1 12 0v10"/><path d="M10 13h4"/></svg></span>
+              Produzir
+            </span>
+            <span class="nav-item">
+              <span class="nav-icon-pill"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>
+              Mais
+            </span>
+          </nav>
+          <div class="home-bar-wrap"><div class="home-bar"></div></div>
+        </div>
+      </div>
+    </article>
+  </main>
+
+  <script>
+    (function () {
+      const brl = (v) =>
+        v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+      // 1. Toggle de layout (Grade vs Faixa única)
+      const stage = document.getElementById("stage");
+      const btnGrid = document.getElementById("btn-grid");
+      const btnRow = document.getElementById("btn-row");
+      function setLayout(isRow) {
+        stage.classList.toggle("is-row", isRow);
+        btnRow.setAttribute("aria-pressed", String(isRow));
+        btnGrid.setAttribute("aria-pressed", String(!isRow));
+      }
+      btnGrid.addEventListener("click", () => setLayout(false));
+      btnRow.addEventListener("click", () => setLayout(true));
+
+      // 2. Login: mostrar/ocultar senha
+      const passInput = document.getElementById("login-pass");
+      const togglePass = document.getElementById("toggle-pass");
+      togglePass.addEventListener("click", () => {
+        const show = passInput.type === "password";
+        passInput.type = show ? "text" : "password";
+        togglePass.textContent = show ? "Ocultar" : "Mostrar";
+      });
+
+      // 3. Dados dos produtos (alinhados com dados-iniciais.ts + v2)
+      const PRODUCTS = {
+        nutella: {
+          name: "Brownie Nutella",
+          sub: "Lote de 12 unidades · ~11,4 boas (5% de perda)",
+          cost: 8.23,
+          direct: 4.86,
+          priceEnc: 14.0,
+          priceFeira: 14.0,
+          margin: 41,
+          badgeClass: "badge--warn",
+          sugEnc: 16.5,
+          sugFeira: 17.5,
+          breakdown: [
+            { name: "Ingredientes", note: "Creme de avelã, cacau, ovos e base", val: 3.81, pct: 46.3, color: "#3B1100" },
+            { name: "Mão de obra", note: "66 min no lote (R$ 30/h)", val: 2.75, pct: 33.4, color: "#B48034" },
+            { name: "Embalagem", note: "Caixa, tag, saquinho e sizal", val: 1.06, pct: 12.9, color: "#DF9D2D" },
+            { name: "Perda (5%)", note: "Aparas, quebra e prova", val: 0.41, pct: 5.0, color: "#A80204" },
+            { name: "Forno (gás)", note: "32 min a R$ 4,50/h", val: 0.20, pct: 2.4, color: "#6F4E3B" },
+          ],
+        },
+        tradicional: {
+          name: "Brownie Tradicional",
+          sub: "Lote de 12 unidades · ~11,5 boas (4% de perda)",
+          cost: 5.57,
+          direct: 3.66,
+          priceEnc: 11.5,
+          priceFeira: 12.0,
+          margin: 52,
+          badgeClass: "badge--good",
+          sugEnc: 11.5,
+          sugFeira: 12.5,
+          breakdown: [
+            { name: "Ingredientes", note: "Cacau gotas, cacau 70%, ovos e base", val: 2.60, pct: 46.7, color: "#3B1100" },
+            { name: "Mão de obra", note: "36 min no lote (R$ 30/h)", val: 1.50, pct: 26.9, color: "#B48034" },
+            { name: "Embalagem", note: "Caixa, tag, saquinho e sizal", val: 1.06, pct: 19.0, color: "#DF9D2D" },
+            { name: "Perda (4%)", note: "Aparas e prova", val: 0.22, pct: 4.0, color: "#A80204" },
+            { name: "Forno (gás)", note: "30 min a R$ 4,50/h", val: 0.19, pct: 3.4, color: "#6F4E3B" },
+          ],
+        },
+        redvelvet: {
+          name: "Brownie Redvelvet",
+          sub: "Lote de 12 unidades · ~11,5 boas (4% de perda)",
+          cost: 5.26,
+          direct: 3.20,
+          priceEnc: 13.5,
+          priceFeira: 14.0,
+          margin: 61,
+          badgeClass: "badge--good",
+          sugEnc: 11.0,
+          sugFeira: 11.5,
+          breakdown: [
+            { name: "Ingredientes", note: "Gotas branco, cream cheese, cacau 50%", val: 2.14, pct: 40.7, color: "#3B1100" },
+            { name: "Mão de obra", note: "40 min no lote (R$ 30/h)", val: 1.67, pct: 31.7, color: "#B48034" },
+            { name: "Embalagem", note: "Caixa, tag, saquinho e sizal", val: 1.06, pct: 20.2, color: "#DF9D2D" },
+            { name: "Perda (4%)", note: "Aparas e prova", val: 0.20, pct: 3.8, color: "#A80204" },
+            { name: "Forno (gás)", note: "30 min a R$ 4,50/h", val: 0.19, pct: 3.6, color: "#6F4E3B" },
+          ],
+        },
+        cookie: {
+          name: "Brownie Cookie",
+          sub: "Lote de 12 unidades · ~11,2 boas (7% de perda)",
+          cost: 8.95,
+          direct: 4.58,
+          priceEnc: 13.5,
+          priceFeira: 14.0,
+          margin: 34,
+          badgeClass: "badge--crit",
+          sugEnc: 18.0,
+          sugFeira: 19.0,
+          breakdown: [
+            { name: "Ingredientes", note: "Gotas, cacau 70%, cookie e barra", val: 3.52, pct: 39.3, color: "#3B1100" },
+            { name: "Mão de obra", note: "84 min no lote (R$ 30/h)", val: 3.50, pct: 39.1, color: "#B48034" },
+            { name: "Embalagem", note: "Caixa, tag, saquinho e sizal", val: 1.06, pct: 11.8, color: "#DF9D2D" },
+            { name: "Perda (7%)", note: "Quebra do cookie no corte", val: 0.67, pct: 7.5, color: "#A80204" },
+            { name: "Forno (gás)", note: "32 min a R$ 4,50/h", val: 0.20, pct: 2.2, color: "#6F4E3B" },
+          ],
+        },
+      };
+
+      // 4. Interatividade Tela 4 (Detalhe)
+      document.querySelectorAll(".detail-chip").forEach((chip) => {
+        chip.addEventListener("click", () => {
+          document.querySelectorAll(".detail-chip").forEach((c) => c.setAttribute("aria-selected", "false"));
+          chip.setAttribute("aria-selected", "true");
+          const p = PRODUCTS[chip.dataset.prod];
+          document.getElementById("det-title").textContent = p.name;
+          document.getElementById("det-sub").textContent = p.sub;
+          document.getElementById("det-cost").textContent = brl(p.cost);
+          document.getElementById("det-direct").textContent = `Direto: ${brl(p.direct)} / un`;
+          document.getElementById("det-margin").textContent = `${p.margin}%`;
+          document.getElementById("det-margin-pill").innerHTML =
+            `<span class="badge ${p.badgeClass} tnum" style="padding:2px 8px;font-size:11px;">Cobra ${brl(p.priceEnc)}</span>`;
+          document.getElementById("det-lote-total").textContent = `100% · ${brl(p.cost)}/un`;
+
+          document.getElementById("det-bar").innerHTML = p.breakdown
+            .map((b) => `<div class="stacked-seg" style="width:${b.pct}%;background:${b.color};"></div>`)
+            .join("");
+
+          document.getElementById("det-rows").innerHTML = p.breakdown
+            .map(
+              (b) => `
+              <div class="cost-row">
+                <div class="cost-row-left">
+                  <span class="cost-swatch" style="background:${b.color};"></span>
+                  <div>
+                    <span class="cost-name">${b.name}</span>
+                    <span class="cost-note tnum">${b.note}</span>
+                  </div>
+                </div>
+                <div class="cost-row-right">
+                  <span class="cost-val tnum">${brl(b.val)}</span>
+                  <span class="cost-pct tnum">${b.pct.toFixed(1).replace(".", ",")}%</span>
+                </div>
+              </div>`
+            )
+            .join("");
+
+          const dEnc = p.sugEnc - p.priceEnc;
+          const dFeira = p.sugFeira - p.priceFeira;
+          document.getElementById("det-sug-enc").textContent = brl(p.sugEnc);
+          document.getElementById("det-diff-enc").textContent =
+            dEnc > 0 ? `Hoje ${brl(p.priceEnc)} (+${brl(dEnc)})` : `Preço atual dentro do alvo`;
+          document.getElementById("det-sug-feira").textContent = brl(p.sugFeira);
+          document.getElementById("det-diff-feira").textContent =
+            dFeira > 0 ? `Hoje ${brl(p.priceFeira)} (+${brl(dFeira)})` : `Preço atual dentro do alvo`;
+        });
+      });
+
+      document.querySelectorAll("[data-jump-detail]").forEach((el) => {
+        el.addEventListener("click", () => {
+          const targetChip = document.querySelector(`.detail-chip[data-prod="${el.dataset.jumpDetail}"]`);
+          if (targetChip) targetChip.click();
+          document.getElementById("phone-detalhe")?.scrollIntoView({ behavior: "smooth", inline: "center" });
+        });
+      });
+
+      // 5. Interatividade Tela 5 (Vender)
+      const FEES = { pix: 0, debito: 0.019, credito: 0.042, dinheiro: 0 };
+      const sellState = { prod: "tradicional", qty: 6, channel: "encomenda", pay: "pix" };
+
+      function renderSell() {
+        const p = PRODUCTS[sellState.prod];
+        const unit = sellState.channel === "feira" ? p.priceFeira : p.priceEnc;
+        const gross = unit * sellState.qty;
+        const net = gross * (1 - FEES[sellState.pay]);
+        const profit = net - p.cost * sellState.qty;
+
+        document.getElementById("sell-qty").textContent = sellState.qty;
+        document.getElementById("sell-unit-price").innerHTML = `${brl(unit)} / un &#9998;`;
+        document.getElementById("sell-total").textContent = brl(gross);
+        document.getElementById("sell-profit").textContent = `Lucro prev. ${brl(profit)}`;
+        document.getElementById("sell-confirm-txt").textContent = `Confirmar venda · ${brl(gross)}`;
+      }
+
+      document.querySelectorAll("#sell-products .sell-prod-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          sellState.prod = btn.dataset.id;
+          document.querySelectorAll("#sell-products .sell-prod-btn").forEach((b) => {
+            b.classList.remove("is-selected");
+            b.querySelector(".sell-prod-name span")?.remove();
+          });
+          btn.classList.add("is-selected");
+          const check = document.createElement("span");
+          check.textContent = "✓";
+          btn.querySelector(".sell-prod-name").appendChild(check);
+          renderSell();
+        });
+      });
+
+      document.getElementById("sell-minus").addEventListener("click", () => {
+        sellState.qty = Math.max(1, sellState.qty - 1);
+        renderSell();
+      });
+      document.getElementById("sell-plus").addEventListener("click", () => {
+        sellState.qty += 1;
+        renderSell();
+      });
+
+      document.querySelectorAll("#sell-channels .choice-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          sellState.channel = btn.dataset.channel;
+          document.querySelectorAll("#sell-channels .choice-btn").forEach((b) => b.classList.remove("is-selected"));
+          btn.classList.add("is-selected");
+          renderSell();
+        });
+      });
+
+      document.querySelectorAll("#sell-payments .choice-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          sellState.pay = btn.dataset.pay;
+          document.querySelectorAll("#sell-payments .choice-btn").forEach((b) => b.classList.remove("is-selected"));
+          btn.classList.add("is-selected");
+          renderSell();
+        });
+      });
+
+      document.getElementById("sell-confirm").addEventListener("click", () => {
+        const p = PRODUCTS[sellState.prod];
+        const toast = document.getElementById("sell-toast");
+        toast.textContent = `Venda salva (${sellState.qty} × ${p.name.replace("Brownie ", "")}) · custo do dia: ${brl(p.cost)}/un`;
+        toast.classList.add("is-visible");
+        setTimeout(() => toast.classList.remove("is-visible"), 3200);
+      });
+
+      // 6. Interatividade Tela 6 (Produzir -> lista de compras arredondada por pacote)
+      const CATALOG = {
+        cacau70: { name: "Cacau 70%", type: "ing", packQty: 500, unit: "g", packSing: "pacote de 500 g", packPlur: "pacotes de 500 g", price: 30.0 },
+        nutella: { name: "Creme de avelã (Nutella)", type: "ing", packQty: 350, unit: "g", packSing: "pote de 350 g", packPlur: "potes de 350 g", price: 35.4 },
+        gotasMeio: { name: "Cacau gotas meio amargo", type: "ing", packQty: 2000, unit: "g", packSing: "pacote de 2 kg", packPlur: "pacotes de 2 kg", price: 62.0 },
+        cacau50: { name: "Cacau 50%", type: "ing", packQty: 1000, unit: "g", packSing: "pacote de 1 kg", packPlur: "pacotes de 1 kg", price: 35.0 },
+        gotasBranco: { name: "Chocolate gotas branco", type: "ing", packQty: 1000, unit: "g", packSing: "pacote de 1 kg", packPlur: "pacotes de 1 kg", price: 30.0 },
+        creamCheese: { name: "Cream cheese", type: "ing", packQty: 300, unit: "g", packSing: "pote de 300 g", packPlur: "potes de 300 g", price: 13.0 },
+        cookieB: { name: "Cookie Bauducco", type: "ing", packQty: 100, unit: "g", packSing: "pacote de 100 g", packPlur: "pacotes de 100 g", price: 5.0 },
+        barraLeite: { name: "Barra chocolate ao leite", type: "ing", packQty: 80, unit: "g", packSing: "barra de 80 g", packPlur: "barras de 80 g", price: 6.0 },
+        ovo: { name: "Ovo", type: "ing", packQty: 20, unit: "un", packSing: "bandeja de 20 un", packPlur: "bandejas de 20 un", price: 18.0 },
+        margarina: { name: "Margarina", type: "ing", packQty: 1000, unit: "g", packSing: "pote de 1 kg", packPlur: "potes de 1 kg", price: 13.0 },
+        acucar: { name: "Açúcar", type: "ing", packQty: 1000, unit: "g", packSing: "pacote de 1 kg", packPlur: "pacotes de 1 kg", price: 3.8 },
+        farinha: { name: "Farinha", type: "ing", packQty: 1000, unit: "g", packSing: "pacote de 1 kg", packPlur: "pacotes de 1 kg", price: 4.0 },
+        tag: { name: "Tag", type: "emb", packQty: 200, unit: "un", packSing: "pacote de 200 un", packPlur: "pacotes de 200 un", price: 50.0 },
+        caixa: { name: "Caixa", type: "emb", packQty: 25, unit: "un", packSing: "pacote de 25 un", packPlur: "pacotes de 25 un", price: 12.5 },
+        saquinho: { name: "Saquinho", type: "emb", packQty: 100, unit: "un", packSing: "pacote de 100 un", packPlur: "pacotes de 100 un", price: 20.5 },
+        sizal: { name: "Sizal", type: "emb", packQty: 100, unit: "m", packSing: "rolo de 100 m", packPlur: "rolos de 100 m", price: 10.0 },
+      };
+
+      const RECIPES = {
+        tradicional: { cacau70: 135, gotasMeio: 540, ovo: 4, farinha: 120, acucar: 270, margarina: 100 },
+        nutella: { nutella: 300, gotasMeio: 180, cacau50: 100, ovo: 4, farinha: 120, acucar: 240, margarina: 100 },
+        redvelvet: { cacau50: 135, gotasBranco: 270, ovo: 4, farinha: 120, acucar: 270, margarina: 100, creamCheese: 150 },
+        cookie: { cacau70: 135, gotasMeio: 540, ovo: 4, farinha: 120, acucar: 270, margarina: 100, cookieB: 100, barraLeite: 80 },
+      };
+
+      const batches = { tradicional: 3, nutella: 2, redvelvet: 0, cookie: 0 };
+
+      function renderProduce() {
+        let totalBatches = 0;
+        const totals = {};
+
+        Object.entries(batches).forEach(([key, count]) => {
+          totalBatches += count;
+          const row = document.querySelector(`.batch-row[data-recipe="${key}"]`);
+          row.querySelector("[data-count]").textContent = count;
+          row.querySelector("[data-units]").textContent = `${count * 12} brownies (12/fornada)`;
+          if (count > 0) {
+            Object.entries(RECIPES[key]).forEach(([ing, q]) => {
+              totals[ing] = (totals[ing] || 0) + q * count;
+            });
+          }
+        });
+
+        const totalUnits = totalBatches * 12;
+        if (totalUnits > 0) {
+          totals.tag = totalUnits;
+          totals.caixa = totalUnits;
+          totals.saquinho = totalUnits;
+          totals.sizal = totalUnits;
+        }
+
+        document.getElementById("prod-summary-pill").textContent =
+          `${totalBatches} ${totalBatches === 1 ? "fornada" : "fornadas"} · ${totalUnits} un`;
+
+        const ingLines = [];
+        const embLines = [];
+        let ingCost = 0;
+        let embCost = 0;
+
+        Object.keys(CATALOG).forEach((key) => {
+          const needed = totals[key] || 0;
+          if (!needed) return;
+          const item = CATALOG[key];
+          const packs = Math.ceil(needed / item.packQty);
+          const cost = packs * item.price;
+          const packLabel = packs === 1 ? item.packSing : item.packPlur;
+          const neededFmt = `${needed.toLocaleString("pt-BR")} ${item.unit}`;
+          const html = `
+            <div class="shop-item">
+              <div>
+                <span class="shop-item-name">${item.name}</span>
+                <span class="shop-item-pack tnum">${neededFmt} &rarr; ${packs} ${packLabel}</span>
+              </div>
+              <span class="shop-item-price tnum">${brl(cost)}</span>
+            </div>`;
+          if (item.type === "ing") {
+            ingCost += cost;
+            ingLines.push(html);
+          } else {
+            embCost += cost;
+            embLines.push(html);
+          }
+        });
+
+        const shopEl = document.getElementById("shopping-list");
+        if (totalUnits === 0) {
+          shopEl.innerHTML = `<div style="padding:14px 4px;text-align:center;color:var(--muted);font-size:13px;font-weight:600;">Escolha ao menos 1 fornada acima para gerar a lista de compras.</div>`;
+        } else {
+          shopEl.innerHTML = `
+            <div class="shopping-subhead">Ingredientes</div>
+            ${ingLines.join("")}
+            <div class="shopping-subhead">Embalagens (${totalUnits} unidades)</div>
+            ${embLines.join("")}`;
+        }
+
+        document.getElementById("prod-breakdown").textContent =
+          `Insumos ${brl(ingCost)} · Embal. ${brl(embCost)}`;
+        document.getElementById("prod-total").textContent = brl(ingCost + embCost);
+      }
+
+      document.querySelectorAll(".batch-row").forEach((row) => {
+        const key = row.dataset.recipe;
+        row.querySelector(".mini-step-btn--minus").addEventListener("click", () => {
+          batches[key] = Math.max(0, batches[key] - 1);
+          renderProduce();
+        });
+        row.querySelector(".mini-step-btn--plus").addEventListener("click", () => {
+          batches[key] += 1;
+          renderProduce();
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -21,7 +21,10 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
+ && adduser --system --uid 1001 nextjs \
+ && mkdir -p /app/backups && chown nextjs:nodejs /app/backups
+# /app/backups recebe o volume do Dokploy (BACKUP_DIR). Criada aqui com dono nextjs para
+# o volume novo herdar a permissão de escrita.
 
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
