@@ -1,0 +1,23 @@
+# Só o banco, para desenvolvimento local. O app roda com `npm run dev`.
+# Em produção quem orquestra é o Dokploy: serviço Postgres dele + build pelo Dockerfile.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: custos-carol-db
+    environment:
+      POSTGRES_USER: custos
+      POSTGRES_PASSWORD: custos
+      POSTGRES_DB: custos
+    ports:
+      # 5433 no host para não brigar com outro Postgres local.
+      - "5433:5432"
+    volumes:
+      - custos-carol-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U custos -d custos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  custos-carol-pgdata:

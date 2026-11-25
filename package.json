@@ -1,0 +1,36 @@
+{
+  "name": "custos-carol",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:scripts": "esbuild src/db/migrate.ts src/db/seed.ts --bundle --platform=node --format=cjs --outdir=dist-scripts --out-extension:.js=.cjs",
+    "start": "next start",
+    "db:generate": "drizzle-kit generate",
+    "db:check": "node --env-file=.env --import tsx src/db/check.ts",
+    "db:migrate": "node --env-file=.env --import tsx src/db/migrate.ts",
+    "db:seed": "node --env-file=.env --import tsx src/db/seed.ts",
+    "db:verify": "node --conditions=react-server --env-file=.env --import tsx src/db/verify.ts",
+    "test:calc": "tsx src/lib/calc.test.ts",
+    "test:precos": "node --conditions=react-server --env-file=.env --import tsx src/db/test-precos.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "next": "^15.5.29",
+    "postgres": "^3.4.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "drizzle-kit": "^0.30.2",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
