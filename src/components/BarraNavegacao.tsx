@@ -9,8 +9,12 @@ export function BarraNavegacao() {
   const inicioAtivo = pathname === "/";
   const produtosAtivo = pathname === "/produtos" || pathname.startsWith("/produtos/");
   const venderAtivo = pathname === "/vender" || pathname.startsWith("/vender/");
-  const insumosAtivo = pathname === "/insumos" || pathname.startsWith("/insumos/");
-  const maisAtivo = pathname === "/mais" || pathname.startsWith("/mais/");
+  const produzirAtivo = pathname === "/produzir" || pathname.startsWith("/produzir/");
+  const maisAtivo =
+    pathname === "/mais" ||
+    pathname.startsWith("/mais/") ||
+    pathname === "/insumos" ||
+    pathname.startsWith("/insumos/");
 
   return (
     <div className="bottom-nav-wrap">
@@ -60,18 +64,18 @@ export function BarraNavegacao() {
         </Link>
 
         <Link
-          href="/insumos"
-          className={`nav-link${insumosAtivo ? " is-active" : ""}`}
-          aria-current={insumosAtivo ? "page" : undefined}
+          href="/produzir"
+          className={`nav-link${produzirAtivo ? " is-active" : ""}`}
+          aria-current={produzirAtivo ? "page" : undefined}
         >
           <span className="nav-icon-pill">
             <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 7h16" />
-              <path d="M6 7v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7" />
-              <path d="M9 7V5a3 3 0 0 1 6 0v2" />
+              <path d="M4 19h16" />
+              <path d="M6 19V9a6 6 0 0 1 12 0v10" />
+              <path d="M10 13h4" />
             </svg>
           </span>
-          <span>Insumos</span>
+          <span>Produzir</span>
         </Link>
 
         <Link

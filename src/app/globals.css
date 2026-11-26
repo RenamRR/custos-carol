@@ -2056,3 +2056,334 @@ select:focus-visible {
 .venda-strike {
   text-decoration: line-through;
 }
+
+
+/* ---------- Etapa 4: Produzir, lista de compras e atalho Insumos em Mais ---------- */
+
+.mais-atalho-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 13px 16px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  border: 1.5px solid var(--line-strong);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  color: var(--ink);
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.mais-atalho-card:hover {
+  background: var(--cream-warm);
+  border-color: var(--caramel);
+}
+
+.mais-atalho-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mais-atalho-title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.mais-atalho-sub {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.produce-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.batch-row {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 9px 10px 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-shadow: var(--shadow-card);
+}
+
+.batch-info {
+  min-width: 0;
+}
+
+.batch-info strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.batch-info span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.mini-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.mini-step-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: none;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.mini-step-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.mini-step-btn--minus {
+  background: var(--cream-warm);
+  color: var(--chocolate);
+}
+
+.mini-step-btn--plus {
+  background: var(--mustard);
+  color: var(--chocolate);
+}
+
+.mini-step-val {
+  min-width: 34px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.produce-total-banner {
+  background: linear-gradient(155deg, #491704 0%, var(--chocolate) 70%, #2b0b00 100%);
+  color: var(--bg);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: var(--shadow-hero);
+}
+
+.produce-total-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.produce-total-label {
+  font-size: 13px;
+  color: #e7d5bf;
+  font-weight: 700;
+}
+
+.produce-total-val {
+  font-size: 26px;
+  font-weight: 800;
+  color: #f7c76e;
+  line-height: 1.15;
+  text-align: right;
+  margin-left: auto;
+}
+
+.produce-total-prefixo {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f2d59b;
+}
+
+.produce-total-sub {
+  font-size: 12px;
+  color: #dfc8ae;
+  line-height: 1.4;
+}
+
+.produce-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.produce-actions-row > button {
+  flex: 1 1 150px;
+}
+
+.shopping-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shopping-subhead {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+.shop-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.shop-row:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.shop-row--comprado {
+  opacity: 0.58;
+}
+
+.shop-row--comprado .shop-item-name,
+.shop-row--comprado .shop-item-pack {
+  text-decoration: line-through;
+}
+
+.shop-row-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.shop-check-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 auto;
+  cursor: pointer;
+}
+
+.shop-check-hit {
+  width: 44px;
+  height: 44px;
+  margin: -8px 0 -8px -8px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.shop-check-input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--chocolate);
+  cursor: pointer;
+}
+
+.shop-item-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.shop-item-pack {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.shop-item-meta {
+  display: block;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.shop-item-price {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.shop-jatenho-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-left: 36px;
+}
+
+.shop-jatenho-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.shop-jatenho-input-box {
+  width: 136px;
+  flex-shrink: 0;
+}
+
+.shop-jatenho-input-box .field-input {
+  min-height: 44px;
+  padding: 6px 44px 6px 10px;
+  font-size: 14px;
+}
+
+.produce-copy-fallback {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.produce-copy-textarea {
+  min-height: 120px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  resize: vertical;
+  background: var(--surface);
+  color: var(--ink);
+}

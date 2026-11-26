@@ -2,6 +2,7 @@ import "server-only";
 import { exigirUsuario } from "./auth";
 import * as consultas from "./consultas-db";
 import * as consultasVendas from "./consultas-vendas";
+import * as consultasProducao from "./consultas-producao";
 import type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto } from "./custo-completo";
 export type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto, ProdutoPainel, ResumoCanal, Pendencia } from "./custo-completo";
 export type { PontoHistorico } from "./consultas-db";
@@ -64,4 +65,10 @@ export async function carregarMes(ano: number, mes: number): Promise<import("./v
 export async function carregarHoje(): Promise<import("./vendas").DadosHoje> {
   await exigirUsuario();
   return consultasVendas.carregarHoje();
+}
+
+export type { DadosProduzir, ProdutoProducao, InsumoProducao } from "./producao";
+export async function carregarProduzir(): Promise<import("./producao").DadosProduzir> {
+  await exigirUsuario();
+  return consultasProducao.carregarProduzir();
 }

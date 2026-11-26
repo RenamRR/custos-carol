@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { sair } from "@/app/entrar/actions";
 import { CanaisEditor } from "@/components/CanaisEditor";
@@ -48,9 +49,21 @@ async function ConteudoMais({ usuario }: { usuario: Usuario }) {
       <div>
         <h1 className="page-title">Mais</h1>
         <p className="page-sub">
-          Mão de obra, forno e gás, canais, taxas, imposto e conta conectada.
+          Insumos, mão de obra, forno e gás, canais, taxas, imposto e conta conectada.
         </p>
       </div>
+
+      <Link href="/insumos" className="mais-atalho-card">
+        <div className="mais-atalho-main">
+          <span className="mais-atalho-title">Insumos e embalagens</span>
+          <span className="mais-atalho-sub">
+            Preços de ingredientes e materiais de embalagem
+          </span>
+        </div>
+        <span className="falta-item-arrow" aria-hidden="true">
+          &rarr;
+        </span>
+      </Link>
 
       <section className="card" aria-label="Conta conectada">
         <div className="conta-row">
