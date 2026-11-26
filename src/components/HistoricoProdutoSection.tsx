@@ -21,7 +21,7 @@ export function HistoricoProdutoSection({
         <span className="badge badge--cream tnum">12 meses</span>
       </div>
       <p className="section-note" style={{ marginBottom: 12 }}>
-        Calculado com a receita atual a partir das mudanças de preços, taxas e custos.
+        Evolução real do custo e da margem considerando receita, insumos e taxas vigentes em cada data.
       </p>
 
       <GraficoCustoEMargem

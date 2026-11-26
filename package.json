@@ -23,7 +23,7 @@
     "test:vendas": "node --conditions=react-server --import tsx --test src/lib/vendas.test.ts src/lib/vendas-db.test.ts",
     "test:custo": "node --import tsx --test src/lib/custo-completo.test.ts",
     "test:producao": "node --conditions=react-server --import tsx --test src/lib/producao.test.ts src/lib/producao-db.test.ts",
-    "test:historia": "node --conditions=react-server --import tsx --test src/lib/linha-do-tempo.test.ts src/lib/linha-do-tempo-db.test.ts"
+    "test:historia": "node --conditions=react-server --import tsx --test src/lib/linha-do-tempo.test.ts src/lib/linha-do-tempo-db.test.ts src/lib/receita-versoes-db.test.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

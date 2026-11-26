@@ -9,6 +9,7 @@ import {
   carregarCustoHora,
   carregarForno,
   carregarHistoricoProduto,
+  carregarHistoricoReceita,
   carregarInsumos,
   carregarProdutos,
 } from "@/lib/queries";
@@ -23,17 +24,20 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
   let canais;
   let config;
   let historico;
+  let historicoReceita;
 
   try {
-    [insumos, produtos, custoHora, forno, canais, config, historico] = await Promise.all([
-      carregarInsumos(),
-      carregarProdutos(),
-      carregarCustoHora(),
-      carregarForno(),
-      carregarCanais(),
-      carregarConfig(),
-      carregarHistoricoProduto(produtoId),
-    ]);
+    [insumos, produtos, custoHora, forno, canais, config, historico, historicoReceita] =
+      await Promise.all([
+        carregarInsumos(),
+        carregarProdutos(),
+        carregarCustoHora(),
+        carregarForno(),
+        carregarCanais(),
+        carregarConfig(),
+        carregarHistoricoProduto(produtoId),
+        carregarHistoricoReceita(produtoId),
+      ]);
   } catch (err) {
     return (
       <EstadoErro
@@ -66,6 +70,7 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
       canais={canais}
       config={config}
       historico={historico}
+      historicoReceita={historicoReceita}
     />
   );
 }

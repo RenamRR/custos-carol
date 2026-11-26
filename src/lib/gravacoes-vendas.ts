@@ -5,6 +5,7 @@ import { getDb } from "../db";
 import { canais, eventos, formasPagamento, produtos, vendas, vendaItens } from "../db/schema";
 import type { Resultado } from "../app/actions";
 import { carregarPainel } from "./consultas-db";
+import { comAutor } from "./autoria";
 import { idValido, numeroCusto } from "./validacao-custo";
 import { CANAL_FEIRA, dataCivilValida, diaSaoPaulo, instanteVenda, type EntradaEvento, type EntradaVenda, type ResultadoEvento, type ResultadoVenda } from "./vendas";
 
@@ -104,7 +105,7 @@ export async function cancelarEvento(usuarioId: number, id: number): Promise<Res
 }
 export async function removerProduto(usuarioId: number, id: number): Promise<Resultado> {
   if (!idValido(id)) return falha("Produto inválido.");
-  return gravar(() => getDb().transaction(async (tx) => {
+  return gravar(() => comAutor(usuarioId, async (tx) => {
     const [produto] = await tx.select().from(produtos).where(eq(produtos.id, id)).for("update");
     if (!produto) return falha("Produto não encontrado.");
     const [item] = await tx.select({ id: vendaItens.id }).from(vendaItens).where(eq(vendaItens.produtoId, id)).limit(1);

@@ -6,6 +6,7 @@ import { alertasDispensados, canalFormas, canais, configuracaoValores, formaPaga
 import type { Resultado } from "../app/actions";
 import { idValido, IMPOSTO_CHAVE, numeroCusto, PERDA_MAXIMA_PCT } from "./validacao-custo";
 import { lerChaveAlerta } from "./linha-do-tempo";
+import { comAutor } from "./autoria";
 
 const ok: Resultado = { ok: true };
 const falha = (erro: string): Resultado => ({ ok: false, erro });
@@ -97,17 +98,17 @@ export async function salvarImposto(usuarioId: number, pct: string): Promise<Res
 }
 
 /** `semForno` é opcional: ausente mantém o valor gravado (compatível com a tela da etapa 2). */
-export async function salvarCustoProduto(_usuarioId: number, id: number, campos: { minutosForno: string; perdaPct: string; semForno?: boolean }): Promise<Resultado> {
+export async function salvarCustoProduto(usuarioId: number, id: number, campos: { minutosForno: string; perdaPct: string; semForno?: boolean }): Promise<Resultado> {
   const minutos = numeroCusto(campos?.minutosForno, 999999999999.99);
   const perda = numeroCusto(campos?.perdaPct, PERDA_MAXIMA_PCT);
   const semForno = campos?.semForno;
   if (!idValido(id) || minutos === null || perda === null) return falha("Minutos devem ser não negativos e perda entre 0 e 89,99%, com até 2 casas decimais.");
   if (semForno !== undefined && typeof semForno !== "boolean") return falha("Valor inválido para \"não vai ao forno\".");
-  return gravar(async () => {
-    const rows = await getDb().update(produtos).set({ minutosForno: String(minutos), perdaPct: String(perda), ...(semForno === undefined ? {} : { semForno }) })
+  return gravar(() => comAutor(usuarioId, async (tx) => {
+    const rows = await tx.update(produtos).set({ minutosForno: String(minutos), perdaPct: String(perda), ...(semForno === undefined ? {} : { semForno }) })
       .where(and(eq(produtos.id, id), eq(produtos.ativo, true))).returning({ id: produtos.id });
     return rows.length ? ok : falha("Produto não encontrado.");
-  });
+  }));
 }
 
 /** Grava só a dispensa; o alerta em si é recalculado. Repetir o pedido não muda quem dispensou. */

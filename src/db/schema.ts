@@ -12,6 +12,8 @@ import {
   boolean,
   index,
   unique,
+  jsonb,
+  bigint,
 } from "drizzle-orm/pg-core";
 
 export const usuarios = pgTable("usuarios", {
@@ -72,12 +74,35 @@ export const insumoPrecos = pgTable(
       .notNull()
       .references(() => insumos.id, { onDelete: "cascade" }),
     preco: numeric("preco", { precision: 14, scale: 4 }).notNull(),
+    /**
+     * Etapa 6: o preço é "R$ X por esta qtd". O app nunca informa: o trigger BEFORE INSERT copia
+     * `insumos.qtd` (o `default null` aqui só deixa o campo opcional no insert do Drizzle).
+     */
+    qtdEmbalagem: numeric("qtd_embalagem", { precision: 14, scale: 4 }).notNull().default(sql`null`),
+    /** 'preco' (action) | 'embalagem' (trigger de `insumos.qtd`, que repete o preço vigente). */
+    origem: text("origem").notNull().default("preco"),
     vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
     nota: text("nota"),
     alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
   },
-  (t) => [index("idx_insumo_precos_lookup").on(t.insumoId, t.vigenteDesde)],
+  (t) => [index("idx_insumo_precos_lookup").on(t.insumoId, t.vigenteDesde),
+    check("insumo_precos_qtd_embalagem_check", sql`${t.qtdEmbalagem} > 0`),
+    check("insumo_precos_origem_check", sql`${t.origem} in ('preco', 'embalagem')`)],
 );
+
+/**
+ * Etapa 6: versões da receita (foto jsonb). Só os triggers da 0007 escrevem aqui
+ * (`registrar_versao_receita`); o app só lê.
+ */
+export const receitaVersoes = pgTable("receita_versoes", {
+  id: serial("id").primaryKey(),
+  produtoId: integer("produto_id").notNull().references(() => produtos.id, { onDelete: "cascade" }),
+  vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
+  atualizadoEm: timestamp("atualizado_em", { withTimezone: true }),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+  receita: jsonb("receita").notNull(),
+  txid: bigint("txid", { mode: "number" }).notNull().default(sql`txid_current()`),
+}, (t) => [index("idx_receita_versoes_lookup").on(t.produtoId, t.vigenteDesde.desc(), t.id.desc())]);
 
 export const produtos = pgTable("produtos", {
   id: serial("id").primaryKey(),

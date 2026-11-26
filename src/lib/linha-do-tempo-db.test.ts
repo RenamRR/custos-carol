@@ -22,7 +22,9 @@ function adaptar(alvo: object): object {
     return Reflect.get(target, prop, receiver);
   } });
 }
-const literal = (v: string | number | null | undefined) => (v === null || v === undefined ? "null" : typeof v === "number" ? String(v) : `'${v.replace(/'/g, "''")}'`);
+const quase = (a: number, b: number, msg?: string) => assert.ok(Math.abs(a - b) <= 1e-9, `${msg ?? ""}: ${a} ≠ ${b}`);
+const semMargem = <T extends { margemPct: number }>({ margemPct: _m, ...c }: T) => c;
+const literal =(v: string | number | null | undefined) => (v === null || v === undefined ? "null" : typeof v === "number" ? String(v) : `'${v.replace(/'/g, "''")}'`);
 
 test("linha do tempo no banco: 'agora' = carregarPainel, alertas, dispensa, histórico, sem_forno e backup", async () => {
   const pg = new PGlite();
@@ -34,8 +36,9 @@ test("linha do tempo no banco: 'agora' = carregarPainel, alertas, dispensa, hist
     const db = adaptar(drizzle(pg, { schema })) as unknown as ReturnType<typeof getDb>;
     cache._db = db;
 
-    // Seed real (planilha), há 200 dias, como o seed.ts grava.
-    let sqlSeed = "insert into usuarios (id, login, nome, senha_hash) values (1, 'carol', 'Carol', 'fixture');\n";
+    // Seed real (planilha), há 200 dias, numa transação só (como o seed.ts): cada produto nasce com
+    // UMA versão da receita, em criado_em. Tradicional e Redvelvet com 40 min de forno.
+    let sqlSeed = "begin;\ninsert into usuarios (id, login, nome, senha_hash) values (1, 'carol', 'Carol', 'fixture');\n";
     INSUMOS_INICIAIS.forEach((i, n) => {
       sqlSeed += `insert into insumos (id, nome, tipo, embalagem, qtd, unidade) values (${n + 1}, ${literal(i.nome)}, ${literal(i.tipo)}, ${literal(i.embalagem)}, ${i.qtd}, ${literal(i.unidade)});\n`;
       sqlSeed += `insert into insumo_precos (insumo_id, preco, vigente_desde) values (${n + 1}, ${i.preco}, now() - interval '200 days');\n`;
@@ -43,16 +46,15 @@ test("linha do tempo no banco: 'agora' = carregarPainel, alertas, dispensa, hist
     const idInsumo = (nome: string) => INSUMOS_INICIAIS.findIndex((i) => i.nome === nome) + 1;
     PRODUTOS_INICIAIS.forEach((p, n) => {
       const id = n + 1;
-      sqlSeed += `insert into produtos (id, nome, rendimento, markup_alvo, minutos_preparo, minutos_acabamento_un) values (${id}, ${literal(p.nome)}, ${p.rendimento}, ${p.markupAlvo}, ${p.minutosPreparo}, ${p.minutosAcabamentoUn});\n`;
+      sqlSeed += `insert into produtos (id, nome, rendimento, markup_alvo, minutos_preparo, minutos_acabamento_un, minutos_forno, criado_em) values (${id}, ${literal(p.nome)}, ${p.rendimento}, ${p.markupAlvo}, ${p.minutosPreparo}, ${p.minutosAcabamentoUn}, ${id <= 2 ? 40 : 0}, now() - interval '200 days');\n`;
       sqlSeed += `insert into produto_precos (produto_id, preco, vigente_desde) values (${id}, ${p.precoVenda}, now() - interval '200 days');\n`;
       p.linhas.forEach((l, o) => { sqlSeed += `insert into receita_linhas (produto_id, insumo_id, qtd, ordem) values (${id}, ${idInsumo(l.insumo)}, ${l.qtd}, ${o});\n`; });
       p.embalagens.forEach((e, o) => { sqlSeed += `insert into produto_embalagens (produto_id, insumo_id, qtd_por_unidade, ordem) values (${id}, ${idInsumo(e.insumo)}, ${e.qtdPorUnidade}, ${o});\n`; });
     });
-    await pg.exec(sqlSeed);
+    await pg.exec(sqlSeed + "commit;");
     const cacau = idInsumo("Cacau 70%");
     // Histórico dentro e fora das janelas, com autoria, empate de instante e registro futuro.
     await pg.exec(`
-      update produtos set minutos_forno = 40 where id in (1, 2);
       insert into insumo_precos (insumo_id, preco, vigente_desde, alterado_por) values
         (${cacau}, 33, now() - interval '120 days', 1),
         (${cacau}, 45, now() - interval '30 days', 1),
@@ -64,7 +66,11 @@ test("linha do tempo no banco: 'agora' = carregarPainel, alertas, dispensa, hist
       insert into produto_precos (produto_id, canal_id, preco, vigente_desde, alterado_por)
         select 1, id, 7, now() - interval '5 days', 1 from canais where nome = 'Feira';`);
 
-    // 1) "Agora" da linha do tempo = carregarPainel(), número a número.
+    assert.deepEqual((await pg.query("select produto_id, count(*)::int as n from receita_versoes group by 1 order by 1")).rows,
+      PRODUTOS_INICIAIS.map((_, n) => ({ produto_id: n + 1, n: 1 })), "uma versão por produto, a do seed");
+
+    // 1) "Agora" da linha do tempo = carregarPainel(), número a número. A foto ordena as linhas por
+    // insumo (não por `ordem`): somar em outra ordem pode mudar o último bit, daí a folga de 1e-9.
     const painel = await carregarPainel(db);
     const series = await carregarSeries(db);
     const base = await carregarBase(db);
@@ -72,8 +78,9 @@ test("linha do tempo no banco: 'agora' = carregarPainel, alertas, dispensa, hist
     assert.equal(agora.length, painel.produtos.length);
     for (const p of painel.produtos) {
       const q = agora.find((x) => x.produto.id === p.produto.id)!;
-      assert.equal(q.resultado.custoUnitario, p.resultado.custoUnitario, p.produto.nome);
-      assert.deepEqual(q.canais, p.canais, p.produto.nome);
+      quase(q.resultado.custoUnitario, p.resultado.custoUnitario, p.produto.nome);
+      assert.deepEqual(q.canais.map(semMargem), p.canais.map(semMargem), p.produto.nome);
+      q.canais.forEach((c, i) => quase(c.margemPct, p.canais[i].margemPct, p.produto.nome));
     }
     assert.ok(painel.produtos[0].resultado.custoForno > 0, "o ensaio cobre o forno");
 

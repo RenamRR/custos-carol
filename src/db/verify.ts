@@ -16,6 +16,7 @@ import {
   nivelMargem,
 } from "../lib/calc.js";
 import { carregarCustoHora, carregarInsumos, carregarProdutos } from "../lib/consultas-db.js";
+import { receitasDivergentes } from "../lib/consultas-historico.js";
 
 let falhas = 0;
 function exige(condicao: boolean, mensagem: string) {
@@ -167,6 +168,11 @@ async function main() {
   if (comAlerta.length > 0) {
     console.log(`\nLinhas marcadas para conferir: ${comAlerta.length}`);
   }
+
+  // --- histórico da receita (etapa 6): a última versão tem que ser a receita de hoje ---
+  const divergentes = await receitasDivergentes();
+  for (const d of divergentes) exige(false, `${d.nome}: ${d.motivo}`);
+  if (divergentes.length === 0) console.log("\nHistórico da receita: a última versão de cada produto bate com as tabelas.");
 
   console.log(falhas === 0 ? "\nOK — modelo íntegro." : `\n${falhas} problema(s).`);
   process.exit(falhas === 0 ? 0 : 1);

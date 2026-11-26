@@ -30,10 +30,11 @@ import {
   type LinhaReceita,
 } from "@/lib/calc";
 import type { Canal, Config, Forno, ProdutoCompleto } from "@/lib/custo-completo";
-import type { HistoricoProduto } from "@/lib/linha-do-tempo";
+import type { HistoricoProduto, VersaoReceita } from "@/lib/linha-do-tempo";
 import { BadgeMargem, BarraCusto } from "./IndicadorMargem";
 import { CartaoPrecoCanal } from "./CartaoPrecoCanal";
 import { HistoricoProdutoSection } from "./HistoricoProdutoSection";
+import { HistoricoReceitaSection } from "./HistoricoReceitaSection";
 import { desfocarNoEnter, paraCampo, paraPreco, useSalvar } from "./useSalvar";
 
 function CardLinhaIngrediente({
@@ -253,6 +254,7 @@ export function DetalheProduto({
   canais,
   config,
   historico,
+  historicoReceita,
 }: {
   produto: ProdutoCompleto;
   insumos: Insumo[];
@@ -261,6 +263,7 @@ export function DetalheProduto({
   canais: Canal[];
   config: Config;
   historico: HistoricoProduto | null;
+  historicoReceita: VersaoReceita[] | null;
 }) {
   const router = useRouter();
   const dadosSave = useSalvar();
@@ -622,6 +625,8 @@ export function DetalheProduto({
       )}
 
       <HistoricoProdutoSection historico={historico} />
+
+      <HistoricoReceitaSection versoes={historicoReceita} />
 
       <section className={`card${dadosSave.pendente ? " salvando" : ""}`} aria-label="Dados básicos do produto">
         <h2 className="section-heading" style={{ marginBottom: 12 }}>

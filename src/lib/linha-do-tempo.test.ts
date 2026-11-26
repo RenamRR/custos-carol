@@ -3,8 +3,9 @@ import { test } from "node:test";
 import { calcularProduto, faltaPreencher } from "./calc";
 import type { ProdutoCompleto } from "./custo-completo";
 import {
-  alertasAtivos, alertasMargem, estadoEm, instantesDeMudanca, lerChaveAlerta, maisSubiram, painelEm, serieInsumo, serieProduto,
-  type BaseCusto, type SeriesCusto,
+  alertasAtivos, alertasMargem, diffReceita, ehPreenchimento, estadoEm, historicoReceita, instantesDeMudanca, lerChaveAlerta,
+  maisSubiram, painelEm, serieInsumo, serieProduto,
+  type BaseCusto, type FotoReceita, type SeriesCusto,
 } from "./linha-do-tempo";
 
 /*
@@ -15,6 +16,7 @@ import {
  *   pote 100 → custo 5,00 → 50%    pote 130 → 6,50 → 35%    pote 134 → 6,70 → 33%
  *   pote 133,8 → 6,69 → 33,1%      pote 150 → 7,50 → 25%
  */
+const NASCE = Date.parse("2026-08-01T12:00:00.000Z");
 const T0 = Date.parse("2026-09-01T12:00:00.000Z");
 const DESDE = Date.parse("2026-09-02T00:00:00.000Z");
 const T1 = Date.parse("2026-10-01T12:00:00.000Z");
@@ -30,24 +32,39 @@ function base(produtos: ProdutoCompleto[] = [nutella]): BaseCusto {
   return {
     produtos,
     insumos: [
-      { id: 1, nome: "Creme de avelã", tipo: "ingrediente", embalagem: "Pote 1 kg", qtd: 1000, unidade: "g" },
-      { id: 2, nome: "Farinha", tipo: "ingrediente", embalagem: "Pacote 1 kg", qtd: 1000, unidade: "g" },
+      { id: 1, nome: "Creme de avelã", tipo: "ingrediente", embalagem: "Pote 1 kg", qtd: 1000, unidade: "g", ativo: true },
+      { id: 2, nome: "Farinha", tipo: "ingrediente", embalagem: "Pacote 1 kg", qtd: 1000, unidade: "g", ativo: true },
     ],
     canais: [{ id: 2, nome: "Feira", margemAlvoPct: 40, ativo: true, ordem: 0, formas: [{ id: 1, nome: "Pix", ativo: true, ordem: 0, taxaPct: null }] }],
     formas: [{ id: 1, nome: "Pix" }, { id: 4, nome: "Crédito à vista" }],
   };
 }
-function series(extra: Partial<SeriesCusto> = {}, poteInicial = 100): SeriesCusto {
+/** A foto que o banco gravaria para a receita deste produto. */
+function foto(p: ProdutoCompleto): FotoReceita {
   return {
-    insumos: [{ id: 1, vigenteDesde: T0, alteradoPor: null, insumoId: 1, preco: poteInicial }, ...(extra.insumos ?? [])],
+    rendimento: p.rendimento, minutosPreparo: p.minutosPreparo, minutosAcabamentoUn: p.minutosAcabamentoUn,
+    minutosForno: p.minutosForno, perdaPct: p.perdaPct, semForno: p.semForno ?? false,
+    linhas: p.linhas.map((l) => ({ insumoId: l.insumoId, qtd: l.qtd })),
+    embalagens: p.embalagens.map((e) => ({ insumoId: e.insumoId, qtdPorUnidade: e.qtdPorUnidade })),
+  };
+}
+const versao = (id: number, t: number, p: ProdutoCompleto, alteradoPor: string | null = null) =>
+  ({ id, vigenteDesde: t, alteradoPor, produtoId: p.id, receita: foto(p) });
+/** Cada produto em `produtos` nasce em NASCE com a receita da fixture (linha de base). */
+function series(extra: Partial<SeriesCusto> = {}, poteInicial = 100, produtos: ProdutoCompleto[] = [nutella]): SeriesCusto {
+  return {
+    insumos: [{ id: 1, vigenteDesde: T0, alteradoPor: null, insumoId: 1, preco: poteInicial, qtdEmbalagem: 1000 }, ...(extra.insumos ?? [])],
     custoHora: extra.custoHora ?? [],
     forno: extra.forno ?? [],
     taxas: [{ id: 1, vigenteDesde: T0, alteradoPor: null, formaId: 1, taxaPct: 0 }, ...(extra.taxas ?? [])],
     imposto: [{ id: 1, vigenteDesde: T0, alteradoPor: null, valor: 0 }, ...(extra.imposto ?? [])],
     precos: [{ id: 1, vigenteDesde: T0, alteradoPor: null, produtoId: 10, canalId: null, preco: 10 }, ...(extra.precos ?? [])],
+    receitas: [...produtos.map((p, i) => versao(100 + i, NASCE, p)), ...(extra.receitas ?? [])],
   };
 }
-const pote = (id: number, t: number, preco: number, alteradoPor: string | null = "Carol") => ({ id, vigenteDesde: t, alteradoPor, insumoId: 1, preco });
+const pote = (id: number, t: number, preco: number, alteradoPor: string | null = "Carol", qtdEmbalagem = 1000) =>
+  ({ id, vigenteDesde: t, alteradoPor, insumoId: 1, preco, qtdEmbalagem });
+const iso = (t: number) => new Date(t).toISOString();
 const perto = (a: number, b: number) => assert.ok(Math.abs(a - b) < 1e-9, `${a} ≠ ${b}`);
 
 test("aumento que cruza a meta: 50% → 35% na Feira, com a causa do creme", () => {
@@ -57,7 +74,7 @@ test("aumento que cruza a meta: 50% → 35% na Feira, com a causa do creme", () 
   assert.equal(a.chave, "2026-10-01T12:00:00.000Z|10|2");
   assert.equal(a.produto, "Nutella"); assert.equal(a.canal, "Feira"); assert.equal(a.meta, 40);
   perto(a.de, 50); perto(a.para, 35);
-  assert.deepEqual(a.causas, [{ tipo: "insumo", nome: "Creme de avelã", de: 100, para: 130, alteradoPor: "Carol", insumoId: 1 }]);
+  assert.deepEqual(a.causas, [{ tipo: "insumo", nome: "Creme de avelã", de: 100, para: 130, alteradoPor: "Carol", insumoId: 1, unidade: "g", qtdDe: 1000, qtdPara: 1000 }]);
   assert.deepEqual(lerChaveAlerta(a.chave), { instante: a.instante, produtoId: 10, canalId: 2 });
 });
 
@@ -76,7 +93,7 @@ test("primeiro preenchimento não alerta; o aumento seguinte do mesmo botijão a
   const s = series({ forno: [
     { id: 1, vigenteDesde: T1, alteradoPor: "Carol", precoBotijao: 120, horasPorBotijao: 10 },
     { id: 2, vigenteDesde: T2, alteradoPor: "Renam", precoBotijao: 150, horasPorBotijao: 10 },
-  ] });
+  ] }, 100, [comForno]);
   const alertas = alertasMargem(s, base([comForno]), DESDE, AGORA);
   assert.equal(alertas.length, 1);
   assert.equal(alertas[0].instante, new Date(T2).toISOString());
@@ -116,11 +133,11 @@ test("preço baixado abaixo da meta alerta com causa 'preco' (geral e próprio d
 
 test("ordem pelo estrago e janela (desde, agora]", () => {
   const brownie: ProdutoCompleto = { ...nutella, id: 11, nome: "Brownie", linhas: [{ id: 2, insumoId: 1, qtd: 200, alerta: null }] };
-  const s = series({ insumos: [pote(2, T1, 300)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] });
+  const s = series({ insumos: [pote(2, T1, 300)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] }, 100, [nutella, brownie]);
   // Pote 300: Nutella custo 15 → 50% → −50%. Brownie custo = 200 × 0,3 ÷ 10 = 6 → 80% → 40%: igual à meta, não alerta.
   const alertas = alertasMargem(s, base([nutella, brownie]), DESDE, AGORA);
   assert.deepEqual(alertas.map((a) => [a.produto, a.de, a.para]), [["Nutella", 50, -50]]);
-  const s2 = series({ insumos: [pote(2, T1, 400)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] });
+  const s2 = series({ insumos: [pote(2, T1, 400)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] }, 100, [nutella, brownie]);
   // Pote 400: Brownie custo 8 → 80% → 20% (estrago 60); Nutella custo 20 → 50% → −100% (estrago 150).
   // A base vem com o Brownie primeiro: a ordem do resultado tem que vir do estrago.
   assert.deepEqual(alertasMargem(s2, base([brownie, nutella]), DESDE, AGORA).map((a) => [a.produto, a.de, a.para]), [["Nutella", 50, -100], ["Brownie", 80, 20]]);
@@ -139,7 +156,7 @@ test("sem_forno: forno vale 0, sai de 'falta preencher' e o gás não vira causa
   const s = series({ forno: [
     { id: 1, vigenteDesde: T0, alteradoPor: null, precoBotijao: 120, horasPorBotijao: 10 },
     { id: 2, vigenteDesde: T1, alteradoPor: null, precoBotijao: 600, horasPorBotijao: 10 },
-  ], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 12, canalId: null, preco: 10 }] });
+  ], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 12, canalId: null, preco: 10 }] }, 100, [semForno]);
   assert.deepEqual(alertasMargem(s, base([semForno]), DESDE, AGORA), []);
   assert.equal(serieProduto(12, s, base([semForno]), DESDE, AGORA).length, 1, "gás não mexe no produto sem forno");
 });
@@ -147,14 +164,14 @@ test("sem_forno: forno vale 0, sai de 'falta preencher' e o gás não vira causa
 test("série do insumo: ponto inicial em desde, um ponto por mudança, autor e preço por unidade", () => {
   const s = series({ insumos: [pote(2, T1, 130), pote(3, T2, 130, "Renam"), pote(4, AGORA + 1, 999)] });
   assert.deepEqual(serieInsumo(1, s, base(), DESDE, AGORA), [
-    { instante: new Date(DESDE).toISOString(), preco: 100, precoPorUnidade: 0.1, alteradoPor: null },
-    { instante: new Date(T1).toISOString(), preco: 130, precoPorUnidade: 0.13, alteradoPor: "Carol" },
+    { instante: new Date(DESDE).toISOString(), preco: 100, qtdEmbalagem: 1000, precoPorUnidade: 0.1, alteradoPor: null },
+    { instante: new Date(T1).toISOString(), preco: 130, qtdEmbalagem: 1000, precoPorUnidade: 0.13, alteradoPor: "Carol" },
   ]);
   assert.deepEqual(serieInsumo(2, s, base(), DESDE, AGORA), [], "insumo sem preço: sem histórico");
 });
 
 test("série do produto: degrau com o início e só as mudanças que mexem nele", () => {
-  const s = series({ insumos: [pote(2, T1, 130), { id: 5, vigenteDesde: T2, alteradoPor: "Carol", insumoId: 2, preco: 7 }] });
+  const s = series({ insumos: [pote(2, T1, 130), { id: 5, vigenteDesde: T2, alteradoPor: "Carol", insumoId: 2, preco: 7, qtdEmbalagem: 1000 }] });
   const pontos = serieProduto(10, s, base(), DESDE, AGORA);
   assert.equal(pontos.length, 2, "farinha não está na receita da Nutella");
   assert.deepEqual(pontos.map((p) => [p.instante, p.custoUn, p.canais[0].margemPct]), [
@@ -167,10 +184,10 @@ test("série do produto: degrau com o início e só as mudanças que mexem nele"
 test("o que mais subiu: % entre desde e agora; ignora sem valor em desde, queda e zero", () => {
   const s = series({ insumos: [
     pote(2, T1, 130),
-    { id: 5, vigenteDesde: T0, alteradoPor: null, insumoId: 2, preco: 4 }, { id: 6, vigenteDesde: T1, alteradoPor: null, insumoId: 2, preco: 5 },
+    { id: 5, vigenteDesde: T0, alteradoPor: null, insumoId: 2, preco: 4, qtdEmbalagem: 1000 }, { id: 6, vigenteDesde: T1, alteradoPor: null, insumoId: 2, preco: 5, qtdEmbalagem: 1000 },
   ] });
-  const b = base(); b.insumos.push({ id: 3, nome: "Novo", tipo: "ingrediente", embalagem: "", qtd: 1, unidade: "un" });
-  s.insumos.push({ id: 7, vigenteDesde: T1, alteradoPor: null, insumoId: 3, preco: 50 });
+  const b = base(); b.insumos.push({ id: 3, nome: "Novo", tipo: "ingrediente", embalagem: "", qtd: 1, unidade: "un", ativo: true });
+  s.insumos.push({ id: 7, vigenteDesde: T1, alteradoPor: null, insumoId: 3, preco: 50, qtdEmbalagem: 1 });
   const lista = maisSubiram(s, b, DESDE, 3, AGORA);
   assert.deepEqual(lista.map((i) => [i.nome, i.de, i.para]), [["Creme de avelã", 100, 130], ["Farinha", 4, 5]]);
   perto(lista[0].variacaoPct, 30); perto(lista[1].variacaoPct, 25);
@@ -219,7 +236,120 @@ test("alertas ativos: só o último golpe por produto × canal, some se corrigid
   assert.deepEqual(alertasAtivos(todos, [], new Set()), []);
   // Ordem por estrago entre produtos: pote 400 → Nutella 50 → −100 (150) antes de Brownie 80 → 20 (60).
   const brownie: ProdutoCompleto = { ...nutella, id: 11, nome: "Brownie", linhas: [{ id: 2, insumoId: 1, qtd: 200, alerta: null }] };
-  const s2 = series({ insumos: [pote(2, T1, 400)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] });
+  const s2 = series({ insumos: [pote(2, T1, 400)], precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 10 }] }, 100, [brownie, nutella]);
   const b2 = base([brownie, nutella]);
   assert.deepEqual(alertasAtivos(alertasMargem(s2, b2, DESDE, AGORA), painelEm(s2, b2, AGORA), new Set()).map((a) => a.produto), ["Nutella", "Brownie"]);
+});
+
+/* ---------------- etapa 6: receita e embalagem no tempo ---------------- */
+
+test("receita no tempo: creme 500 → 650 g em T1 usa 500 antes e 650 depois, e alerta com a causa 'receita' e o diff", () => {
+  // 650 g × 0,10 ÷ 10 = 6,50/un → 35% (antes 5,00 → 50%).
+  const mais = { ...nutella, linhas: [{ id: 1, insumoId: 1, qtd: 650, alerta: null }] };
+  const s = series({ receitas: [versao(2, T1, mais, "Carol")] });
+  assert.equal(estadoEm(s, base(), T1 - 1).produtos[0].linhas[0].qtd, 500);
+  assert.equal(estadoEm(s, base(), T1).produtos[0].linhas[0].qtd, 650);
+  const alertas = alertasMargem(s, base(), DESDE, AGORA);
+  assert.equal(alertas.length, 1);
+  perto(alertas[0].de, 50); perto(alertas[0].para, 35);
+  assert.deepEqual(alertas[0].causas, [{
+    tipo: "receita", nome: "Nutella", de: 5, para: 6.5, alteradoPor: "Carol", produtoId: 10, preenchimento: false,
+    mudancas: [{ campo: "ingrediente", insumoId: 1, nome: "Creme de avelã", unidade: "g", de: 500, para: 650 }],
+  }]);
+  const pontos = serieProduto(10, s, base(), DESDE, AGORA);
+  assert.deepEqual(pontos.map((p) => [p.instante, p.custoUn, p.canais[0].margemPct]), [[iso(DESDE), 5, 50], [iso(T1), 6.5, 35]]);
+  assert.deepEqual(pontos[1].causas.map((c) => c.tipo), ["receita"]);
+  // Histórico da receita: mais recente primeiro; a linha de base não tem diff. Sem preço em NASCE: custo 0.
+  const versoes = historicoReceita(10, s, base())!;
+  assert.deepEqual(versoes.map((v) => [v.id, v.vigenteDesde, v.alteradoPor, v.custoAntes, v.custoUn, v.mudancas.length, v.preenchimento]), [
+    [2, iso(T1), "Carol", 5, 6.5, 1, false], [100, iso(NASCE), null, null, 0, 0, false],
+  ]);
+  assert.deepEqual(versoes[0].linhas, [{ insumoId: 1, qtd: 650, nome: "Creme de avelã", unidade: "g" }]);
+  assert.equal(historicoReceita(999, s, base()), null);
+});
+
+test("preencher os minutos de forno (0 → 60) não alerta; aumentar depois (60 → 90) alerta", () => {
+  // Botijão 120/10 h = 0,20/min. 60 min = 12/lote = 1,20/un → 6,20 → 38%: cruzaria a meta, mas é preenchimento.
+  // 90 min = 18/lote = 1,80/un → 6,80 → 32%: queda de 6 p.p. já abaixo da meta.
+  const s = series({
+    forno: [{ id: 1, vigenteDesde: T0, alteradoPor: null, precoBotijao: 120, horasPorBotijao: 10 }],
+    receitas: [versao(2, T1, { ...nutella, minutosForno: 60 }, "Carol"), versao(3, T2, { ...nutella, minutosForno: 90 }, "Renam")],
+  });
+  const [preencheu] = instantesDeMudanca(s, base(), DESDE, T1);
+  assert.deepEqual(preencheu.causas.map((c) => [c.tipo, c.preenchimento, c.mudancas]), [["receita", true, [{ campo: "minutosForno", de: 0, para: 60 }]]]);
+  const alertas = alertasMargem(s, base(), DESDE, AGORA);
+  assert.deepEqual(alertas.map((a) => a.instante), [iso(T2)]);
+  perto(alertas[0].de, 38); perto(alertas[0].para, 32);
+  assert.deepEqual(alertas[0].causas.map((c) => [c.tipo, c.alteradoPor, c.preenchimento, c.mudancas]), [["receita", "Renam", false, [{ campo: "minutosForno", de: 60, para: 90 }]]]);
+});
+
+test("produto que nasce depois de `desde`: não existe antes, a série começa no nascimento e nascer não alerta", () => {
+  // Brownie: 200 g × 0,10 ÷ 10 = 2,00/un; preço 2,50 → 20%, abaixo da meta já ao nascer.
+  const brownie: ProdutoCompleto = { ...nutella, id: 11, nome: "Brownie", linhas: [{ id: 2, insumoId: 1, qtd: 200, alerta: null }] };
+  const s = series({
+    receitas: [versao(3, T1, brownie, "Carol")],
+    precos: [{ id: 2, vigenteDesde: T0, alteradoPor: null, produtoId: 11, canalId: null, preco: 2.5 }],
+  });
+  const b = base([nutella, brownie]);
+  assert.deepEqual(estadoEm(s, b, T1 - 1).produtos.map((p) => p.id), [10]);
+  assert.deepEqual(estadoEm(s, b, T1).produtos.map((p) => p.id), [10, 11]);
+  assert.deepEqual(serieProduto(11, s, b, DESDE, AGORA).map((p) => [p.instante, p.custoUn, p.canais[0].margemPct]), [[iso(T1), 2, 20]]);
+  assert.deepEqual(serieProduto(11, s, b, DESDE, T1 - 1), [], "antes de nascer não há série");
+  const [nasceu] = instantesDeMudanca(s, b, DESDE, AGORA);
+  assert.deepEqual(nasceu.causas.map((c) => [c.tipo, c.nome, c.de, c.para, c.mudancas]), [["receita", "Brownie", null, 2, []]]);
+  assert.deepEqual(alertasMargem(s, b, DESDE, AGORA), []);
+});
+
+test("embalagem de compra no tempo: preço por unidade do próprio registro; trocar só a embalagem também é mudança", () => {
+  // Pote 1 kg a 100 → pote 2 kg a 190: 0,10 → 0,095/g; custo 5,00 → 4,75 (margem sobe, sem alerta).
+  const maior = series({ insumos: [pote(2, T1, 190, "Carol", 2000)] });
+  assert.equal(estadoEm(maior, base(), T1).insumos[0].qtd, 2000);
+  perto(painelEm(maior, base(), T1)[0].resultado.custoUnitario, 4.75);
+  assert.deepEqual(serieInsumo(1, maior, base(), DESDE, AGORA).map((p) => [p.preco, p.qtdEmbalagem, p.precoPorUnidade]), [[100, 1000, 0.1], [190, 2000, 0.095]]);
+  assert.deepEqual(instantesDeMudanca(maior, base(), DESDE, AGORA)[0].causas, [
+    { tipo: "insumo", nome: "Creme de avelã", de: 100, para: 190, alteradoPor: "Carol", insumoId: 1, unidade: "g", qtdDe: 1000, qtdPara: 2000 },
+  ]);
+  assert.deepEqual(alertasMargem(maior, base(), DESDE, AGORA), []);
+  assert.deepEqual(maisSubiram(maior, base(), DESDE, 3, AGORA), [], "por unidade ficou mais barato");
+  // Mesmo R$ 100, pote de 500 g: 0,20/g → custo 10 → margem 0%. Mesmo preço, mas é mudança e alerta.
+  const menor = series({ insumos: [pote(2, T1, 100, "Carol", 500)] });
+  const [a] = alertasMargem(menor, base(), DESDE, AGORA);
+  perto(a.de, 50); perto(a.para, 0);
+  assert.deepEqual(a.causas.map((c) => [c.tipo, c.de, c.para, c.qtdDe, c.qtdPara]), [["insumo", 100, 100, 1000, 500]]);
+  // Mais subiram compara por unidade: pote 1 kg a 100 → 500 g a 60 = 0,10 → 0,12/g: +20% (o pote ficou mais barato).
+  const [subiu] = maisSubiram(series({ insumos: [pote(2, T1, 60, "Carol", 500)] }), base(), DESDE, 3, AGORA);
+  assert.deepEqual([subiu.de, subiu.para, subiu.qtdDe, subiu.qtdPara], [100, 60, 1000, 500]);
+  perto(subiu.variacaoPct, 20);
+  // Arquivado não entra no "mais subiram" (mas continua no cálculo do passado).
+  const b = base(); b.insumos[0] = { ...b.insumos[0], ativo: false };
+  assert.deepEqual(maisSubiram(series({ insumos: [pote(2, T1, 130)] }), b, DESDE, 3, AGORA), []);
+  perto(painelEm(series({ insumos: [pote(2, T1, 130)] }), b, T1)[0].resultado.custoUnitario, 6.5);
+});
+
+test("diff da receita: campos na ordem, insumos por nome, repetido soma, + e −; preenchimento só 0 → valor", () => {
+  const insumos: BaseCusto["insumos"] = [
+    { id: 1, nome: "Creme de avelã", tipo: "ingrediente", embalagem: "", qtd: 1000, unidade: "g", ativo: true },
+    { id: 2, nome: "Farinha", tipo: "ingrediente", embalagem: "", qtd: 1000, unidade: "g", ativo: true },
+    { id: 3, nome: "Nozes", tipo: "ingrediente", embalagem: "", qtd: 1000, unidade: "g", ativo: false },
+    { id: 9, nome: "Pote", tipo: "embalagem", embalagem: "", qtd: 100, unidade: "un", ativo: true },
+  ];
+  const de: FotoReceita = { rendimento: 10, minutosPreparo: 0, minutosAcabamentoUn: 0, minutosForno: 0, perdaPct: 0, semForno: false,
+    linhas: [{ insumoId: 1, qtd: 300 }, { insumoId: 1, qtd: 200 }, { insumoId: 2, qtd: 100 }], embalagens: [{ insumoId: 9, qtdPorUnidade: 1 }] };
+  const para: FotoReceita = { ...de, rendimento: 12, minutosPreparo: 30, semForno: true,
+    linhas: [{ insumoId: 3, qtd: 50 }, { insumoId: 1, qtd: 500 }], embalagens: [] };
+  const mudancas = diffReceita(de, para, insumos);
+  assert.deepEqual(mudancas, [
+    { campo: "rendimento", de: 10, para: 12 },
+    { campo: "minutosPreparo", de: 0, para: 30 },
+    { campo: "semForno", de: false, para: true },
+    { campo: "ingrediente", insumoId: 2, nome: "Farinha", unidade: "g", de: 100, para: null },
+    { campo: "ingrediente", insumoId: 3, nome: "Nozes", unidade: "g", de: null, para: 50 },
+    { campo: "embalagem", insumoId: 9, nome: "Pote", unidade: "un", de: 1, para: null },
+  ], "creme 300 + 200 = 500 nos dois lados: não mudou");
+  assert.deepEqual(diffReceita(de, { ...de, linhas: [...de.linhas].reverse() }, insumos), [], "a ordem das linhas não é mudança");
+  assert.equal(ehPreenchimento(mudancas), false);
+  assert.equal(ehPreenchimento([{ campo: "minutosForno", de: 0, para: 40 }, { campo: "ingrediente", insumoId: 2, nome: "Farinha", unidade: "g", de: 0, para: 120 }]), true);
+  assert.equal(ehPreenchimento([{ campo: "ingrediente", insumoId: 2, nome: "Farinha", unidade: "g", de: null, para: 120 }]), false, "adicionar não é preencher");
+  assert.equal(ehPreenchimento([{ campo: "minutosForno", de: 40, para: 0 }]), false, "zerar não é preencher");
+  assert.equal(ehPreenchimento([]), false);
 });

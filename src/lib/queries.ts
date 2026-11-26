@@ -95,3 +95,11 @@ export async function carregarMaisSubiram(): Promise<import("./linha-do-tempo").
   await exigirUsuario();
   return consultasHistorico.carregarMaisSubiram();
 }
+
+// Contrato etapa 6.
+export type { FotoReceita, MudancaReceita, VersaoReceita } from "./linha-do-tempo";
+/** Da versão mais recente para a mais antiga. null quando o produto não existe ou está arquivado. */
+export async function carregarHistoricoReceita(produtoId: number): Promise<import("./linha-do-tempo").VersaoReceita[] | null> {
+  await exigirUsuario();
+  return idValido(produtoId) ? consultasHistorico.carregarHistoricoReceita(produtoId) : null;
+}

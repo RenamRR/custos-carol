@@ -5,6 +5,7 @@ import { AlertasMargem } from "@/components/AlertasMargem";
 import { CarregandoPainel } from "@/components/CarregandoPainel";
 import { EstadoErro } from "@/components/EstadoErro";
 import { BadgeMargem, BarraCusto } from "@/components/IndicadorMargem";
+import { formatarQtdLimpaBR } from "@/components/formatarMudancas";
 import { exigirUsuario } from "@/lib/auth";
 import { brl } from "@/lib/calc";
 import {
@@ -265,23 +266,31 @@ async function ConteudoInicio() {
           </div>
         ) : (
           <div className="subiu-list">
-            {maisSubiram.map((item) => (
-              <Link
-                key={item.insumoId}
-                href={`/insumos/${item.insumoId}`}
-                className="subiu-row"
-              >
-                <div className="subiu-info">
-                  <span className="subiu-nome">{item.nome}</span>
-                  <span className="subiu-precos tnum">
-                    {brl(item.de)} &rarr; {brl(item.para)}
+            {maisSubiram.map((item) => {
+              const mudouEmbalagem = Math.abs(item.qtdDe - item.qtdPara) > 1e-6;
+              return (
+                <Link
+                  key={item.insumoId}
+                  href={`/insumos/${item.insumoId}`}
+                  className="subiu-row"
+                >
+                  <div className="subiu-info">
+                    <span className="subiu-nome">{item.nome}</span>
+                    <span className="subiu-precos tnum">
+                      {mudouEmbalagem
+                        ? `${brl(item.de)} (${formatarQtdLimpaBR(item.qtdDe)} ${item.unidade}) → ${brl(item.para)} (${formatarQtdLimpaBR(item.qtdPara)} ${item.unidade})`
+                        : `${brl(item.de)} → ${brl(item.para)}`}
+                    </span>
+                    {mudouEmbalagem && (
+                      <span className="subiu-emb-nota">(embalagem mudou)</span>
+                    )}
+                  </div>
+                  <span className="badge badge--crit tnum">
+                    +{item.variacaoPct.toFixed(0)}%
                   </span>
-                </div>
-                <span className="badge badge--crit tnum">
-                  +{item.variacaoPct.toFixed(0)}%
-                </span>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
       </section>

@@ -2632,11 +2632,13 @@ select:focus-visible {
 .history-var-up {
   color: var(--crit);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .history-var-down {
   color: var(--good);
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .toggle-forno-row {
@@ -2699,4 +2701,137 @@ select:focus-visible {
 
 .toggle-switch.is-on::after {
   transform: translateX(20px);
+}
+
+
+/* ---------- Etapa 6: Histórico da receita e embalagem no tempo ---------- */
+
+.receita-versoes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.receita-versao-card {
+  padding: 12px 13px;
+  border-radius: 15px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.receita-versao-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.receita-versao-meta {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.receita-versao-custo {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.receita-diff-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  line-height: 1.38;
+  color: var(--ink);
+}
+
+.receita-diff-item--add {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.receita-diff-item--rem {
+  color: var(--crit);
+  font-weight: 700;
+}
+
+.receita-details {
+  border-top: 1px dashed var(--line);
+  padding-top: 4px;
+}
+
+.receita-details-summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--ink-2);
+  cursor: pointer;
+  list-style: none;
+}
+
+.receita-details-summary::-webkit-details-marker {
+  display: none;
+}
+
+.receita-details-summary::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.15s ease;
+  margin-right: 4px;
+}
+
+.receita-details[open] .receita-details-summary::after {
+  transform: rotate(-135deg);
+}
+
+.receita-snapshot-box {
+  padding: 8px 10px 10px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.receita-snapshot-params {
+  color: var(--muted);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.receita-snapshot-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subiu-emb-nota {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--warn);
+  margin-top: 2px;
 }
