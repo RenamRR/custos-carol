@@ -9,7 +9,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "./index.js";
 import { insumoPrecos, insumos } from "./schema.js";
 import { brl, calcularProduto, custoPorUnidadeDeMedida, num } from "../lib/calc.js";
-import { carregarInsumos, carregarProdutos } from "../lib/queries.js";
+import { carregarInsumos, carregarProdutos } from "../lib/consultas-db.js";
 
 const ALVO = "Cacau 70%";
 const PRECO_TESTE = 34;

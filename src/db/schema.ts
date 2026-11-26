@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   pgTable,
   serial,
   text,
@@ -9,6 +11,27 @@ import {
   index,
   unique,
 } from "drizzle-orm/pg-core";
+
+export const usuarios = pgTable("usuarios", {
+  id: serial("id").primaryKey(),
+  login: text("login").notNull().unique(),
+  nome: text("nome").notNull(),
+  senhaHash: text("senha_hash").notNull(),
+  ativo: boolean("ativo").notNull().default(true),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  falhasLogin: integer("falhas_login").notNull().default(0),
+  bloqueadoAte: timestamp("bloqueado_ate", { withTimezone: true }),
+}, (t) => [
+  check("usuarios_falhas_login_check", sql`${t.falhasLogin} >= 0`),
+  check("usuarios_login_normalizado", sql`${t.login} = lower(btrim(${t.login})) and length(${t.login}) between 1 and 100`),
+]);
+
+export const sessoes = pgTable("sessoes", {
+  id: text("id").primaryKey(),
+  usuarioId: integer("usuario_id").notNull().references(() => usuarios.id, { onDelete: "cascade" }),
+  expiraEm: timestamp("expira_em", { withTimezone: true }).notNull(),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [index("idx_sessoes_usuario").on(t.usuarioId)]);
 
 /**
  * Regra do schema: preço NUNCA é coluna mutável.
@@ -49,6 +72,7 @@ export const insumoPrecos = pgTable(
     preco: numeric("preco", { precision: 14, scale: 4 }).notNull(),
     vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
     nota: text("nota"),
+    alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
   },
   (t) => [index("idx_insumo_precos_lookup").on(t.insumoId, t.vigenteDesde)],
 );
@@ -80,6 +104,7 @@ export const custoHora = pgTable(
     valor: numeric("valor", { precision: 14, scale: 4 }).notNull(),
     vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
     nota: text("nota"),
+    alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
   },
   (t) => [index("idx_custo_hora_lookup").on(t.vigenteDesde)],
 );
@@ -94,6 +119,7 @@ export const produtoPrecos = pgTable(
     preco: numeric("preco", { precision: 14, scale: 4 }).notNull(),
     vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
     nota: text("nota"),
+    alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
   },
   (t) => [index("idx_produto_precos_lookup").on(t.produtoId, t.vigenteDesde)],
 );

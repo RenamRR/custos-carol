@@ -1,13 +1,16 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { salvarCustoHora } from "@/app/actions";
 import { brl, parseNumeroBR } from "@/lib/calc";
-import { paraCampo, useSalvar } from "./useSalvar";
+import { desfocarNoEnter, paraCampo, useSalvar } from "./useSalvar";
 
 export function CustoHoraEditor({ valor }: { valor: number }) {
+  const router = useRouter();
   const { pendente, erro, salvar } = useSalvar();
   const [campo, setCampo] = useState(paraCampo(valor, 2));
+  const [salvo, setSalvo] = useState(false);
 
   useEffect(() => {
     setCampo(paraCampo(valor, 2));
@@ -15,37 +18,66 @@ export function CustoHoraEditor({ valor }: { valor: number }) {
 
   const atual = parseNumeroBR(campo);
 
+  function aoSalvar() {
+    const novo = parseNumeroBR(campo);
+    const mudou = Math.abs(novo - valor) > 0.00005;
+    setCampo(paraCampo(novo, 2));
+    salvar(
+      () => salvarCustoHora(campo),
+      () => {
+        if (mudou) setSalvo(true);
+        router.refresh();
+      },
+    );
+  }
+
   return (
-    <div className={`custo-hora${pendente ? " salvando" : ""}`}>
-      <div className="campo">
-        <label htmlFor="custo-hora">Custo da hora</label>
-        <input
-          id="custo-hora"
-          className="campo-num"
-          inputMode="decimal"
-          value={campo}
-          onChange={(e) => setCampo(e.target.value)}
-          onBlur={() => {
-            setCampo(paraCampo(parseNumeroBR(campo), 2));
-            salvar(() => salvarCustoHora(campo));
-          }}
-        />
+    <section className={`card${pendente ? " salvando" : ""}`} aria-label="Custo da hora de trabalho">
+      <div className="section-row" style={{ marginBottom: 10 }}>
+        <h2 className="section-heading">Mão de obra</h2>
+        {salvo && <span className="badge badge--good">Salvo no histórico</span>}
       </div>
 
-      <div className="custo-hora__nota">
+      <div className="field-group">
+        <label className="field-label" htmlFor="custo-hora">
+          Valor da hora de trabalho (R$)
+        </label>
+        <div className="field-with-suffix">
+          <input
+            id="custo-hora"
+            className="field-input field-input--num"
+            inputMode="decimal"
+            value={campo}
+            onChange={(e) => {
+              setSalvo(false);
+              setCampo(e.target.value);
+            }}
+            onKeyDown={desfocarNoEnter}
+            onBlur={aoSalvar}
+          />
+          <span className="field-suffix">/h</span>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12 }}>
         {atual > 0 ? (
-          <p>
-            Um minuto de trabalho custa <b>{brl(atual / 60)}</b>. Alterar aqui não sobrescreve:
-            vira registro novo no histórico, então o custo do passado continua correto.
+          <p className="page-sub" style={{ margin: 0 }}>
+            Um minuto de trabalho custa <b className="tnum">{brl(atual / 60)}</b>. Alterar aqui
+            não sobrescreve: grava um registro novo no histórico.
           </p>
         ) : (
-          <p className="custo-hora__vazio">
-            Enquanto estiver zerado, mão de obra <b>não entra</b> em nenhum custo. Nada foi
-            inventado — defina quanto vale a hora de trabalho para o cálculo começar a valer.
-          </p>
+          <div className="banner-aviso">
+            Enquanto estiver zerado, a mão de obra <b>não entra</b> no custo dos produtos. Defina
+            quanto vale a hora de trabalho para incluir os tempos das receitas.
+          </div>
         )}
-        {erro && <span className="erro">{erro}</span>}
       </div>
-    </div>
+
+      {erro && (
+        <div className="banner-erro" role="alert" style={{ marginTop: 10 }}>
+          {erro}
+        </div>
+      )}
+    </section>
   );
 }

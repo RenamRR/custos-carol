@@ -12,7 +12,9 @@ import {
   produtos,
   receitaLinhas,
 } from "@/db/schema";
-import { num } from "@/lib/calc";
+import { num, parseNumeroBR } from "@/lib/calc";
+
+import { exigirUsuario } from "@/lib/auth";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -31,13 +33,13 @@ function texto(valor: unknown, campo: string, max = 200): string | Resultado {
 }
 
 function positivo(valor: unknown, campo: string): number | Resultado {
-  const n = num(valor as string | number);
+  const n = typeof valor === "string" || typeof valor === "number" ? parseNumeroBR(valor) : NaN;
   if (!Number.isFinite(n) || n <= 0) return falha(`${campo} tem que ser maior que zero.`);
   return n;
 }
 
 function naoNegativo(valor: unknown, campo: string): number | Resultado {
-  const n = num(valor as string | number);
+  const n = typeof valor === "string" || typeof valor === "number" ? parseNumeroBR(valor) : NaN;
   if (!Number.isFinite(n) || n < 0) return falha(`${campo} não pode ser negativo.`);
   return n;
 }
@@ -46,7 +48,7 @@ const ehFalha = (v: unknown): v is Resultado =>
   typeof v === "object" && v !== null && "ok" in v && (v as Resultado).ok === false;
 
 function atualizar() {
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 /* ---------------- insumos (catálogo) ---------------- */
@@ -55,6 +57,7 @@ export async function salvarInsumo(
   id: number,
   campos: { nome: string; embalagem: string; qtd: string; unidade: string },
 ): Promise<Resultado> {
+  await exigirUsuario();
   const nome = texto(campos.nome, "Nome");
   if (ehFalha(nome)) return nome;
   const unidade = texto(campos.unidade, "Unidade", 20);
@@ -80,6 +83,7 @@ export async function salvarInsumo(
 }
 
 export async function salvarPrecoInsumo(id: number, preco: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const valor = naoNegativo(preco, "Preço");
   if (ehFalha(valor)) return valor;
 
@@ -93,12 +97,13 @@ export async function salvarPrecoInsumo(id: number, preco: string): Promise<Resu
 
   if (atual && !MUDOU(num(atual.preco), valor)) return OK;
 
-  await db.insert(insumoPrecos).values({ insumoId: id, preco: String(valor) });
+  await db.insert(insumoPrecos).values({ alteradoPor: usuario.id, insumoId: id, preco: String(valor) });
   atualizar();
   return OK;
 }
 
 export async function criarInsumo(tipo: "ingrediente" | "embalagem"): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const db = getDb();
   await db.transaction(async (tx) => {
     const [linha] = await tx
@@ -111,13 +116,14 @@ export async function criarInsumo(tipo: "ingrediente" | "embalagem"): Promise<Re
         unidade: tipo === "embalagem" ? "un" : "g",
       })
       .returning({ id: insumos.id });
-    await tx.insert(insumoPrecos).values({ insumoId: linha.id, preco: "0" });
+    await tx.insert(insumoPrecos).values({ alteradoPor: usuario.id, insumoId: linha.id, preco: "0" });
   });
   atualizar();
   return OK;
 }
 
 export async function removerInsumo(id: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
 
   // As FKs são `on delete restrict`: sem estas checagens o Postgres devolveria um
@@ -157,6 +163,7 @@ export async function salvarProduto(
     minutosAcabamentoUn: string;
   },
 ): Promise<Resultado> {
+  await exigirUsuario();
   const nome = texto(campos.nome, "Nome");
   if (ehFalha(nome)) return nome;
   const rendimento = positivo(campos.rendimento, "Rendimento");
@@ -187,6 +194,7 @@ export async function salvarProduto(
 }
 
 export async function salvarPrecoProduto(id: number, preco: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const valor = naoNegativo(preco, "Preço de venda");
   if (ehFalha(valor)) return valor;
 
@@ -200,20 +208,21 @@ export async function salvarPrecoProduto(id: number, preco: string): Promise<Res
 
   if (atual && !MUDOU(num(atual.preco), valor)) return OK;
 
-  await db.insert(produtoPrecos).values({ produtoId: id, preco: String(valor) });
+  await db.insert(produtoPrecos).values({ alteradoPor: usuario.id, produtoId: id, preco: String(valor) });
   atualizar();
   return OK;
 }
 
 /** Nasce sem nenhuma embalagem: nada entra no custo sem alguém mandar entrar. */
 export async function criarProduto(): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const db = getDb();
   await db.transaction(async (tx) => {
     const [linha] = await tx
       .insert(produtos)
       .values({ nome: "Novo produto", rendimento: "12", markupAlvo: "3.50" })
       .returning({ id: produtos.id });
-    await tx.insert(produtoPrecos).values({ produtoId: linha.id, preco: "0" });
+    await tx.insert(produtoPrecos).values({ alteradoPor: usuario.id, produtoId: linha.id, preco: "0" });
   });
   atualizar();
   return OK;
@@ -221,6 +230,7 @@ export async function criarProduto(): Promise<Resultado> {
 
 /** Copia receita, embalagem e preço de venda vigente. O histórico não é copiado. */
 export async function duplicarProduto(id: number): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const db = getDb();
 
   const [original] = await db.select().from(produtos).where(eq(produtos.id, id)).limit(1);
@@ -246,6 +256,7 @@ export async function duplicarProduto(id: number): Promise<Resultado> {
       .limit(1);
 
     await tx.insert(produtoPrecos).values({
+      alteradoPor: usuario.id,
       produtoId: novo.id,
       preco: preco?.preco ?? "0",
       nota: `Copiado de ${original.nome}`,
@@ -292,6 +303,7 @@ export async function duplicarProduto(id: number): Promise<Resultado> {
 }
 
 export async function removerProduto(id: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
   await db.delete(produtos).where(eq(produtos.id, id));
   atualizar();
@@ -304,6 +316,7 @@ export async function salvarLinha(
   id: number,
   campos: { insumoId: number; qtd: string },
 ): Promise<Resultado> {
+  await exigirUsuario();
   const qtd = naoNegativo(campos.qtd, "Quantidade");
   if (ehFalha(qtd)) return qtd;
 
@@ -331,6 +344,7 @@ export async function salvarLinha(
 }
 
 export async function criarLinha(produtoId: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
   const [primeiro] = await db
     .select({ id: insumos.id })
@@ -355,6 +369,7 @@ export async function criarLinha(produtoId: number): Promise<Resultado> {
 }
 
 export async function removerLinha(id: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
   await db.delete(receitaLinhas).where(eq(receitaLinhas.id, id));
   atualizar();
@@ -363,6 +378,7 @@ export async function removerLinha(id: number): Promise<Resultado> {
 
 /** Tira o alerta "conferir" de uma linha, depois que a dúvida foi resolvida. */
 export async function limparAlerta(id: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
   await db.update(receitaLinhas).set({ alerta: null }).where(eq(receitaLinhas.id, id));
   atualizar();
@@ -375,6 +391,7 @@ export async function salvarEmbalagemProduto(
   id: number,
   campos: { insumoId: number; qtdPorUnidade: string },
 ): Promise<Resultado> {
+  await exigirUsuario();
   const qtd = naoNegativo(campos.qtdPorUnidade, "Quantidade por unidade");
   if (ehFalha(qtd)) return qtd;
 
@@ -407,6 +424,7 @@ export async function salvarEmbalagemProduto(
 }
 
 export async function criarEmbalagemProduto(produtoId: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
 
   const usados = await db
@@ -444,6 +462,7 @@ export async function criarEmbalagemProduto(produtoId: number): Promise<Resultad
 }
 
 export async function removerEmbalagemProduto(id: number): Promise<Resultado> {
+  await exigirUsuario();
   const db = getDb();
   await db.delete(produtoEmbalagens).where(eq(produtoEmbalagens.id, id));
   atualizar();
@@ -454,6 +473,7 @@ export async function removerEmbalagemProduto(id: number): Promise<Resultado> {
 
 /** Igual aos outros preços: não sobrescreve, grava registro novo com data. */
 export async function salvarCustoHora(valor: string, nota?: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
   const v = naoNegativo(valor, "Custo da hora");
   if (ehFalha(v)) return v;
 
@@ -466,7 +486,7 @@ export async function salvarCustoHora(valor: string, nota?: string): Promise<Res
 
   if (atual && !MUDOU(num(atual.valor), v)) return OK;
 
-  await db.insert(custoHora).values({ valor: String(v), nota: nota?.slice(0, 200) ?? null });
+  await db.insert(custoHora).values({ alteradoPor: usuario.id, valor: String(v), nota: nota?.slice(0, 200) ?? null });
   atualizar();
   return OK;
 }

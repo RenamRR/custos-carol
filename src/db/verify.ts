@@ -15,7 +15,7 @@ import {
   minutosDoLote,
   nivelMargem,
 } from "../lib/calc.js";
-import { carregarCustoHora, carregarInsumos, carregarProdutos } from "../lib/queries.js";
+import { carregarCustoHora, carregarInsumos, carregarProdutos } from "../lib/consultas-db.js";
 
 let falhas = 0;
 function exige(condicao: boolean, mensagem: string) {

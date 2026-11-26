@@ -14,20 +14,26 @@
     "db:verify": "node --conditions=react-server --env-file=.env --import tsx src/db/verify.ts",
     "test:calc": "tsx src/lib/calc.test.ts",
     "test:precos": "node --conditions=react-server --env-file=.env --import tsx src/db/test-precos.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "hash-senha": "tsx src/lib/hash-senha.ts",
+    "test:auth": "node --conditions=react-server --import tsx --test src/lib/auth.test.ts",
+    "test:campos": "node --import tsx --test src/lib/campos.test.ts",
+    "test:backup": "node --import tsx --test src/db/backup.test.ts",
+    "test:historico": "node --conditions=react-server --import tsx --test src/lib/historico.test.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
-    "next": "^15.5.29",
+    "next": "^16.4.6",
     "postgres": "^3.4.5",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "server-only": "^0.0.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.6.0",
     "@types/node": "^22.10.7",
-    "@types/react": "^19.0.7",
-    "@types/react-dom": "^19.0.3",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
     "drizzle-kit": "^0.30.2",
     "esbuild": "^0.28.2",
     "tsx": "^4.19.2",
