@@ -16,6 +16,7 @@ import { num, parseNumeroBR } from "@/lib/calc";
 
 import { exigirUsuario } from "@/lib/auth";
 import * as custos from "@/lib/gravacoes-custo";
+import * as gravacoesVendas from "@/lib/gravacoes-vendas";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
@@ -388,11 +389,10 @@ export async function duplicarProduto(id: number): Promise<Resultado> {
 }
 
 export async function removerProduto(id: number): Promise<Resultado> {
-  await exigirUsuario();
-  const db = getDb();
-  await db.delete(produtos).where(eq(produtos.id, id));
-  atualizar();
-  return OK;
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.removerProduto(usuario.id, id);
+  if (resultado.ok) atualizar();
+  return resultado;
 }
 
 /* ---------------- linhas de receita (ingrediente, por receita) ---------------- */
@@ -574,4 +574,36 @@ export async function salvarCustoHora(valor: string, nota?: string): Promise<Res
   await db.insert(custoHora).values({ alteradoPor: usuario.id, valor: String(v), nota: nota?.slice(0, 200) ?? null });
   atualizar();
   return OK;
+}
+
+export type { EntradaVenda, EntradaEvento, ResultadoVenda, ResultadoEvento } from "@/lib/vendas";
+export async function registrarVenda(entrada: import("@/lib/vendas").EntradaVenda): Promise<import("@/lib/vendas").ResultadoVenda> {
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.registrarVenda(usuario.id, entrada);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function cancelarVenda(vendaId: number): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.cancelarVenda(usuario.id, vendaId);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function criarEvento(entrada: import("@/lib/vendas").EntradaEvento): Promise<import("@/lib/vendas").ResultadoEvento> {
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.criarEvento(usuario.id, entrada);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarEvento(id: number, entrada: import("@/lib/vendas").EntradaEvento): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.salvarEvento(usuario.id, id, entrada);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function cancelarEvento(id: number): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await gravacoesVendas.cancelarEvento(usuario.id, id);
+  if (resultado.ok) atualizar();
+  return resultado;
 }

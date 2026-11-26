@@ -85,8 +85,12 @@ async function main() {
       `(obtido ${historicoDepois.length})`,
     );
 
-    // 135g de Cacau 70%: (34-30)/500 * 135 = R$ 1,08 na receita, /12 = R$ 0,09 por unidade
-    const delta = ((PRECO_TESTE - insumoAntes.preco) / insumoAntes.qtd) * 135;
+    // A receita real pode ter outra gramagem que a do seed. Some todas as linhas
+    // desse insumo na receita carregada antes do reajuste, sem presumir 135 g.
+    const quantidadeCacau = tradicionalAntes.linhas
+      .filter((linha) => linha.insumoId === alvo.id)
+      .reduce((total, linha) => total + linha.qtd, 0);
+    const delta = ((PRECO_TESTE - insumoAntes.preco) / insumoAntes.qtd) * quantidadeCacau;
     const esperado = custoAntes + delta / tradicionalAntes.rendimento;
     checa(
       `custo do Tradicional foi de ${brl(custoAntes)} para ${brl(custoDepois)}`,

@@ -20,6 +20,7 @@
     "test:campos": "node --import tsx --test src/lib/campos.test.ts",
     "test:backup": "node --import tsx --test src/db/backup.test.ts",
     "test:historico": "node --conditions=react-server --import tsx --test src/lib/historico.test.ts",
+    "test:vendas": "node --conditions=react-server --import tsx --test src/lib/vendas.test.ts src/lib/vendas-db.test.ts",
     "test:custo": "node --import tsx --test src/lib/custo-completo.test.ts"
   },
   "dependencies": {

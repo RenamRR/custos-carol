@@ -14,6 +14,7 @@ import type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto } fr
 
 /** `db.execute<T>` do Drizzle exige um tipo indexável; isso mantém as interfaces limpas. */
 type Row<T> = T & Record<string, unknown>;
+export type LeitorDb = Pick<ReturnType<typeof getDb>, "execute">;
 
 interface LinhaInsumo {
   id: number;
@@ -25,8 +26,7 @@ interface LinhaInsumo {
   preco: string | null;
 }
 
-export async function carregarInsumos(): Promise<Insumo[]> {
-  const db = getDb();
+export async function carregarInsumos(db: LeitorDb = getDb()): Promise<Insumo[]> {
   const rows = await db.execute<Row<LinhaInsumo>>(sql`
     select
       i.id, i.nome, i.tipo, i.embalagem, i.qtd, i.unidade,
@@ -55,8 +55,7 @@ export async function carregarInsumos(): Promise<Insumo[]> {
 }
 
 /** Valor da hora vigente. Zero significa "ainda não definido" — mão de obra não entra. */
-export async function carregarCustoHora(): Promise<number> {
-  const db = getDb();
+export async function carregarCustoHora(db: LeitorDb = getDb()): Promise<number> {
   const rows = await db.execute<Row<{ valor: string }>>(sql`
     select valor from custo_hora where vigente_desde <= now() order by vigente_desde desc, id desc limit 1
   `);
@@ -91,8 +90,7 @@ interface LinhaEmbalagemRow {
   qtd_por_unidade: string;
 }
 
-export async function carregarProdutos(): Promise<ProdutoCompleto[]> {
-  const db = getDb();
+export async function carregarProdutos(db: LeitorDb = getDb()): Promise<ProdutoCompleto[]> {
 
   const produtosRows = await db.execute<Row<LinhaProduto>>(sql`
     select
@@ -175,8 +173,8 @@ export async function carregarProdutos(): Promise<ProdutoCompleto[]> {
   }));
 }
 
-export async function carregarForno(): Promise<Forno> {
-  const rows = await getDb().execute<Row<{ preco_botijao: string; horas_por_botijao: string }>>(sql`
+export async function carregarForno(db: LeitorDb = getDb()): Promise<Forno> {
+  const rows = await db.execute<Row<{ preco_botijao: string; horas_por_botijao: string }>>(sql`
     select preco_botijao, horas_por_botijao from forno_custos
     where vigente_desde <= now() order by vigente_desde desc, id desc limit 1
   `);
@@ -186,8 +184,8 @@ export async function carregarForno(): Promise<Forno> {
   return { precoBotijao, horasPorBotijao, custoHora, custoMinuto: custoHora / 60, informado: rows.length > 0 };
 }
 
-export async function carregarFormasPagamento(): Promise<FormaPagamento[]> {
-  const rows = await getDb().execute<Row<{ id: number; nome: string; ativo: boolean; ordem: number; taxa_pct: string | null }>>(sql`
+export async function carregarFormasPagamento(db: LeitorDb = getDb()): Promise<FormaPagamento[]> {
+  const rows = await db.execute<Row<{ id: number; nome: string; ativo: boolean; ordem: number; taxa_pct: string | null }>>(sql`
     select f.id, f.nome, f.ativo, f.ordem, t.taxa_pct from formas_pagamento f
     left join lateral (
       select taxa_pct from forma_pagamento_taxas t where t.forma_id = f.id and t.vigente_desde <= now()
@@ -197,10 +195,9 @@ export async function carregarFormasPagamento(): Promise<FormaPagamento[]> {
   return Array.from(rows).map((r) => ({ id: r.id, nome: r.nome, ativo: r.ativo, ordem: r.ordem, taxaPct: r.taxa_pct === null ? null : num(r.taxa_pct) }));
 }
 
-export async function carregarCanais(): Promise<Canal[]> {
-  const db = getDb();
+export async function carregarCanais(db: LeitorDb = getDb()): Promise<Canal[]> {
   const [formas, rows, vinculos] = await Promise.all([
-    carregarFormasPagamento(),
+    carregarFormasPagamento(db),
     db.execute<Row<{ id: number; nome: string; margem_alvo_pct: string; ativo: boolean; ordem: number }>>(sql`
       select id, nome, margem_alvo_pct, ativo, ordem from canais where ativo order by ordem, id`),
     db.execute<Row<{ canal_id: number; forma_id: number }>>(sql`select canal_id, forma_id from canal_formas`),
@@ -211,18 +208,18 @@ export async function carregarCanais(): Promise<Canal[]> {
   }));
 }
 
-export async function carregarConfig(): Promise<Config> {
-  const rows = await getDb().execute<Row<{ valor: string }>>(sql`
+export async function carregarConfig(db: LeitorDb = getDb()): Promise<Config> {
+  const rows = await db.execute<Row<{ valor: string }>>(sql`
     select valor from configuracao_valores where chave = 'imposto_pct' and vigente_desde <= now()
     order by vigente_desde desc, id desc limit 1
   `);
   return { impostoPct: num(rows[0]?.valor) };
 }
 
-export async function carregarPainel(): Promise<Painel> {
+export async function carregarPainel(db: LeitorDb = getDb()): Promise<Painel> {
   const [produtos, insumos, custoHora, forno, canais, formasPagamento, config] = await Promise.all([
-    carregarProdutos(), carregarInsumos(), carregarCustoHora(), carregarForno(),
-    carregarCanais(), carregarFormasPagamento(), carregarConfig(),
+    carregarProdutos(db), carregarInsumos(db), carregarCustoHora(db), carregarForno(db),
+    carregarCanais(db), carregarFormasPagamento(db), carregarConfig(db),
   ]);
   return {
     produtos: produtos.map((produto) => {

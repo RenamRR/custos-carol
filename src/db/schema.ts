@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  date,
   pgTable,
   primaryKey,
   serial,
@@ -81,6 +82,8 @@ export const insumoPrecos = pgTable(
 export const produtos = pgTable("produtos", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
+  arquivadoEm: timestamp("arquivado_em", { withTimezone: true }),
+  arquivadoPor: integer("arquivado_por").references(() => usuarios.id, { onDelete: "set null" }),
   /** Quantas unidades a receita rende. */
   rendimento: numeric("rendimento", { precision: 14, scale: 4 }).notNull().default("12"),
   markupAlvo: numeric("markup_alvo", { precision: 8, scale: 2 }).notNull().default("3.50"),
@@ -230,3 +233,46 @@ export const produtoEmbalagens = pgTable(
     unique("produto_embalagens_unico").on(t.produtoId, t.insumoId),
   ],
 );
+
+export const eventos = pgTable("eventos", {
+  id: serial("id").primaryKey(), nome: text("nome").notNull(), data: date("data").notNull(),
+  custoFixo: numeric("custo_fixo").notNull().default("0"), nota: text("nota"),
+  criadoPor: integer("criado_por").references(() => usuarios.id, { onDelete: "set null" }),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+  alteradoEm: timestamp("alterado_em", { withTimezone: true }),
+  canceladoEm: timestamp("cancelado_em", { withTimezone: true }),
+  canceladoPor: integer("cancelado_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [check("eventos_custo_fixo_check", sql`${t.custoFixo} >= 0`)]);
+
+export const vendas = pgTable("vendas", {
+  id: serial("id").primaryKey(),
+  vendidaEm: timestamp("vendida_em", { withTimezone: true }).notNull().defaultNow(),
+  canalId: integer("canal_id").notNull().references(() => canais.id, { onDelete: "restrict" }),
+  formaId: integer("forma_id").notNull().references(() => formasPagamento.id, { onDelete: "restrict" }),
+  eventoId: integer("evento_id").references(() => eventos.id, { onDelete: "restrict" }),
+  taxaPct: numeric("taxa_pct"), impostoPct: numeric("imposto_pct").notNull(), nota: text("nota"),
+  criadoPor: integer("criado_por").references(() => usuarios.id, { onDelete: "set null" }),
+  criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
+  canceladaEm: timestamp("cancelada_em", { withTimezone: true }),
+  canceladaPor: integer("cancelada_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [
+  index("idx_vendas_vendida_em").on(t.vendidaEm).where(sql`${t.canceladaEm} is null`),
+  index("idx_vendas_evento").on(t.eventoId),
+  check("vendas_taxa_pct_check", sql`${t.taxaPct} between 0 and 30`),
+  check("vendas_imposto_pct_check", sql`${t.impostoPct} between 0 and 50`),
+]);
+
+export const vendaItens = pgTable("venda_itens", {
+  id: serial("id").primaryKey(),
+  vendaId: integer("venda_id").notNull().references(() => vendas.id, { onDelete: "cascade" }),
+  produtoId: integer("produto_id").notNull().references(() => produtos.id, { onDelete: "restrict" }),
+  quantidade: integer("quantidade").notNull(), precoUn: numeric("preco_un").notNull(),
+  custoUn: numeric("custo_un").notNull(), produtoNome: text("produto_nome").notNull(),
+}, (t) => [
+  index("idx_venda_itens_venda").on(t.vendaId),
+  index("idx_venda_itens_produto").on(t.produtoId),
+  check("venda_itens_quantidade_check", sql`${t.quantidade} between 1 and 999`),
+  check("venda_itens_preco_un_check", sql`${t.precoUn} >= 0`),
+  check("venda_itens_custo_un_check", sql`${t.custoUn} >= 0`),
+]);
