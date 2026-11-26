@@ -1,17 +1,37 @@
 import { Suspense } from "react";
 import { sair } from "@/app/entrar/actions";
+import { CanaisEditor } from "@/components/CanaisEditor";
 import { CarregandoPainel } from "@/components/CarregandoPainel";
 import { CustoHoraEditor } from "@/components/CustoHoraEditor";
 import { EstadoErro } from "@/components/EstadoErro";
+import { FormasPagamentoEditor } from "@/components/FormasPagamentoEditor";
+import { FornoEditor } from "@/components/FornoEditor";
+import { ImpostoEditor } from "@/components/ImpostoEditor";
 import { exigirUsuario, type Usuario } from "@/lib/auth";
-import { carregarCustoHora } from "@/lib/queries";
+import {
+  carregarCanais,
+  carregarConfig,
+  carregarCustoHora,
+  carregarFormasPagamento,
+  carregarForno,
+} from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 async function ConteudoMais({ usuario }: { usuario: Usuario }) {
   let custoHora: number;
+  let forno;
+  let canais;
+  let formasPagamento;
+  let config;
   try {
-    custoHora = await carregarCustoHora();
+    [custoHora, forno, canais, formasPagamento, config] = await Promise.all([
+      carregarCustoHora(),
+      carregarForno(),
+      carregarCanais(),
+      carregarFormasPagamento(),
+      carregarConfig(),
+    ]);
   } catch (err) {
     return (
       <EstadoErro
@@ -27,7 +47,9 @@ async function ConteudoMais({ usuario }: { usuario: Usuario }) {
     <>
       <div>
         <h1 className="page-title">Mais</h1>
-        <p className="page-sub">Configurações de mão de obra e conta conectada.</p>
+        <p className="page-sub">
+          Mão de obra, forno e gás, canais, taxas, imposto e conta conectada.
+        </p>
       </div>
 
       <section className="card" aria-label="Conta conectada">
@@ -56,6 +78,10 @@ async function ConteudoMais({ usuario }: { usuario: Usuario }) {
       </section>
 
       <CustoHoraEditor valor={custoHora} />
+      <FornoEditor forno={forno} />
+      <CanaisEditor canais={canais} formasPagamento={formasPagamento} />
+      <FormasPagamentoEditor formas={formasPagamento} />
+      <ImpostoEditor impostoPct={config.impostoPct} />
     </>
   );
 }

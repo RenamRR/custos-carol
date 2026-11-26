@@ -41,13 +41,16 @@ export function useSalvar() {
 }
 
 /** Número no formato pt-BR para exibir dentro do input (sem separador de milhar). */
-export function paraCampo(n: number, casas = 2): string {
+export function paraCampo(n: number, casas = 2, minCasas = 0): string {
   return n.toLocaleString("pt-BR", {
     useGrouping: false,
-    minimumFractionDigits: 0,
+    minimumFractionDigits: minCasas,
     maximumFractionDigits: casas,
   });
 }
+
+/** Preço em R$ sempre exibido com 2 casas decimais no input ("10,00"), sem milhar. */
+export const paraPreco = (n: number): string => paraCampo(n, 2, 2);
 
 /** Faz Enter/Concluído do teclado do celular disparar o onBlur para salvar o campo. */
 export function desfocarNoEnter(e: KeyboardEvent<HTMLInputElement>) {

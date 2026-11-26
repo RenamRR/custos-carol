@@ -19,7 +19,8 @@
     "test:auth": "node --conditions=react-server --import tsx --test src/lib/auth.test.ts",
     "test:campos": "node --import tsx --test src/lib/campos.test.ts",
     "test:backup": "node --import tsx --test src/db/backup.test.ts",
-    "test:historico": "node --conditions=react-server --import tsx --test src/lib/historico.test.ts"
+    "test:historico": "node --conditions=react-server --import tsx --test src/lib/historico.test.ts",
+    "test:custo": "node --import tsx --test src/lib/custo-completo.test.ts"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",

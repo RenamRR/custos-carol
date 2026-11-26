@@ -4,16 +4,16 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { salvarCustoHora } from "@/app/actions";
 import { brl, parseNumeroBR } from "@/lib/calc";
-import { desfocarNoEnter, paraCampo, useSalvar } from "./useSalvar";
+import { desfocarNoEnter, paraPreco, useSalvar } from "./useSalvar";
 
 export function CustoHoraEditor({ valor }: { valor: number }) {
   const router = useRouter();
   const { pendente, erro, salvar } = useSalvar();
-  const [campo, setCampo] = useState(paraCampo(valor, 2));
+  const [campo, setCampo] = useState(paraPreco(valor));
   const [salvo, setSalvo] = useState(false);
 
   useEffect(() => {
-    setCampo(paraCampo(valor, 2));
+    setCampo(paraPreco(valor));
   }, [valor]);
 
   const atual = parseNumeroBR(campo);
@@ -21,7 +21,7 @@ export function CustoHoraEditor({ valor }: { valor: number }) {
   function aoSalvar() {
     const novo = parseNumeroBR(campo);
     const mudou = Math.abs(novo - valor) > 0.00005;
-    setCampo(paraCampo(novo, 2));
+    setCampo(paraPreco(novo));
     salvar(
       () => salvarCustoHora(campo),
       () => {
@@ -32,7 +32,11 @@ export function CustoHoraEditor({ valor }: { valor: number }) {
   }
 
   return (
-    <section className={`card${pendente ? " salvando" : ""}`} aria-label="Custo da hora de trabalho">
+    <section
+      id="mao-de-obra"
+      className={`card${pendente ? " salvando" : ""}`}
+      aria-label="Custo da hora de trabalho"
+    >
       <div className="section-row" style={{ marginBottom: 10 }}>
         <h2 className="section-heading">Mão de obra</h2>
         {salvo && <span className="badge badge--good">Salvo no histórico</span>}

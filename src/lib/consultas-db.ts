@@ -3,7 +3,8 @@ import "server-only";
 // Telas devem importar queries.ts, que exige sessão antes de acessar o banco.
 import { sql } from "drizzle-orm";
 import { getDb } from "@/db";
-import { num, type Insumo, type Produto, type TipoInsumo } from "@/lib/calc";
+import { calcularProduto, faltaPreencher, resumoCanais, num, type Insumo, type Produto, type TipoInsumo } from "@/lib/calc";
+import type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto } from "./custo-completo";
 
 /**
  * Preço vigente = registro mais recente do histórico. O desempate por `id desc`
@@ -34,7 +35,7 @@ export async function carregarInsumos(): Promise<Insumo[]> {
     left join lateral (
       select ip.preco
       from insumo_precos ip
-      where ip.insumo_id = i.id
+      where ip.insumo_id = i.id and ip.vigente_desde <= now()
       order by ip.vigente_desde desc, ip.id desc
       limit 1
     ) p on true
@@ -57,7 +58,7 @@ export async function carregarInsumos(): Promise<Insumo[]> {
 export async function carregarCustoHora(): Promise<number> {
   const db = getDb();
   const rows = await db.execute<Row<{ valor: string }>>(sql`
-    select valor from custo_hora order by vigente_desde desc, id desc limit 1
+    select valor from custo_hora where vigente_desde <= now() order by vigente_desde desc, id desc limit 1
   `);
   const [linha] = Array.from(rows);
   return linha ? num(linha.valor) : 0;
@@ -70,6 +71,8 @@ interface LinhaProduto {
   markup_alvo: string;
   minutos_preparo: string;
   minutos_acabamento_un: string;
+  minutos_forno: string;
+  perda_pct: string;
   preco_venda: string | null;
 }
 
@@ -88,24 +91,41 @@ interface LinhaEmbalagemRow {
   qtd_por_unidade: string;
 }
 
-export async function carregarProdutos(): Promise<Produto[]> {
+export async function carregarProdutos(): Promise<ProdutoCompleto[]> {
   const db = getDb();
 
   const produtosRows = await db.execute<Row<LinhaProduto>>(sql`
     select
       pr.id, pr.nome, pr.rendimento, pr.markup_alvo,
-      pr.minutos_preparo, pr.minutos_acabamento_un,
+      pr.minutos_preparo, pr.minutos_acabamento_un, pr.minutos_forno, pr.perda_pct,
       pv.preco as preco_venda
     from produtos pr
     left join lateral (
       select pp.preco
       from produto_precos pp
-      where pp.produto_id = pr.id
+      where pp.produto_id = pr.id and pp.canal_id is null and pp.vigente_desde <= now()
       order by pp.vigente_desde desc, pp.id desc
       limit 1
     ) pv on true
     where pr.ativo
     order by pr.id
+  `);
+
+  const precosCanal = await db.execute<Row<{ produto_id: number; canal_id: number; preco: string | null; herdado: boolean }>>(sql`
+    select p.id as produto_id, c.id as canal_id, coalesce(pc.preco, pg.preco) as preco,
+      pc.id is null as herdado
+    from produtos p cross join canais c
+    left join lateral (
+      select pp.id, pp.preco from produto_precos pp
+      where pp.produto_id = p.id and pp.canal_id = c.id and pp.vigente_desde <= now()
+      order by pp.vigente_desde desc, pp.id desc limit 1
+    ) pc on true
+    left join lateral (
+      select pp.preco from produto_precos pp
+      where pp.produto_id = p.id and pp.canal_id is null and pp.vigente_desde <= now()
+      order by pp.vigente_desde desc, pp.id desc limit 1
+    ) pg on true
+    where p.ativo and c.ativo order by p.id, c.ordem, c.id
   `);
 
   const linhasRows = await db.execute<Row<LinhaReceitaRow>>(sql`
@@ -145,10 +165,73 @@ export async function carregarProdutos(): Promise<Produto[]> {
     markupAlvo: num(p.markup_alvo),
     minutosPreparo: num(p.minutos_preparo),
     minutosAcabamentoUn: num(p.minutos_acabamento_un),
+    minutosForno: num(p.minutos_forno),
+    perdaPct: num(p.perda_pct),
+    precosPorCanal: Array.from(precosCanal).filter((c) => c.produto_id === p.id)
+      .map((c) => ({ canalId: c.canal_id, preco: num(c.preco), herdado: c.herdado })),
     precoVenda: num(p.preco_venda),
     linhas: linhasPorProduto.get(p.id) ?? [],
     embalagens: embalagensPorProduto.get(p.id) ?? [],
   }));
+}
+
+export async function carregarForno(): Promise<Forno> {
+  const rows = await getDb().execute<Row<{ preco_botijao: string; horas_por_botijao: string }>>(sql`
+    select preco_botijao, horas_por_botijao from forno_custos
+    where vigente_desde <= now() order by vigente_desde desc, id desc limit 1
+  `);
+  const precoBotijao = num(rows[0]?.preco_botijao);
+  const horasPorBotijao = num(rows[0]?.horas_por_botijao);
+  const custoHora = horasPorBotijao > 0 ? precoBotijao / horasPorBotijao : 0;
+  return { precoBotijao, horasPorBotijao, custoHora, custoMinuto: custoHora / 60, informado: rows.length > 0 };
+}
+
+export async function carregarFormasPagamento(): Promise<FormaPagamento[]> {
+  const rows = await getDb().execute<Row<{ id: number; nome: string; ativo: boolean; ordem: number; taxa_pct: string | null }>>(sql`
+    select f.id, f.nome, f.ativo, f.ordem, t.taxa_pct from formas_pagamento f
+    left join lateral (
+      select taxa_pct from forma_pagamento_taxas t where t.forma_id = f.id and t.vigente_desde <= now()
+      order by vigente_desde desc, id desc limit 1
+    ) t on true where f.ativo order by f.ordem, f.id
+  `);
+  return Array.from(rows).map((r) => ({ id: r.id, nome: r.nome, ativo: r.ativo, ordem: r.ordem, taxaPct: r.taxa_pct === null ? null : num(r.taxa_pct) }));
+}
+
+export async function carregarCanais(): Promise<Canal[]> {
+  const db = getDb();
+  const [formas, rows, vinculos] = await Promise.all([
+    carregarFormasPagamento(),
+    db.execute<Row<{ id: number; nome: string; margem_alvo_pct: string; ativo: boolean; ordem: number }>>(sql`
+      select id, nome, margem_alvo_pct, ativo, ordem from canais where ativo order by ordem, id`),
+    db.execute<Row<{ canal_id: number; forma_id: number }>>(sql`select canal_id, forma_id from canal_formas`),
+  ]);
+  return Array.from(rows).map((r) => ({
+    id: r.id, nome: r.nome, margemAlvoPct: num(r.margem_alvo_pct), ativo: r.ativo, ordem: r.ordem,
+    formas: formas.filter((f) => vinculos.some((v) => v.canal_id === r.id && v.forma_id === f.id)),
+  }));
+}
+
+export async function carregarConfig(): Promise<Config> {
+  const rows = await getDb().execute<Row<{ valor: string }>>(sql`
+    select valor from configuracao_valores where chave = 'imposto_pct' and vigente_desde <= now()
+    order by vigente_desde desc, id desc limit 1
+  `);
+  return { impostoPct: num(rows[0]?.valor) };
+}
+
+export async function carregarPainel(): Promise<Painel> {
+  const [produtos, insumos, custoHora, forno, canais, formasPagamento, config] = await Promise.all([
+    carregarProdutos(), carregarInsumos(), carregarCustoHora(), carregarForno(),
+    carregarCanais(), carregarFormasPagamento(), carregarConfig(),
+  ]);
+  return {
+    produtos: produtos.map((produto) => {
+      const resultado = calcularProduto(produto, insumos, custoHora, forno.custoMinuto);
+      return { produto, resultado, canais: resumoCanais(produto, resultado.custoUnitario, canais, config.impostoPct) };
+    }),
+    insumos, custoHora, forno, canais, formasPagamento, config,
+    faltaPreencher: faltaPreencher(produtos, custoHora, forno, canais),
+  };
 }
 
 export interface PontoHistorico {

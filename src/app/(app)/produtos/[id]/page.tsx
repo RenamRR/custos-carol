@@ -3,7 +3,14 @@ import { CarregandoPainel } from "@/components/CarregandoPainel";
 import { DetalheProduto } from "@/components/DetalheProduto";
 import { EstadoErro } from "@/components/EstadoErro";
 import { exigirUsuario } from "@/lib/auth";
-import { carregarCustoHora, carregarInsumos, carregarProdutos } from "@/lib/queries";
+import {
+  carregarCanais,
+  carregarConfig,
+  carregarCustoHora,
+  carregarForno,
+  carregarInsumos,
+  carregarProdutos,
+} from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,12 +18,18 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
   let insumos;
   let produtos;
   let custoHora;
+  let forno;
+  let canais;
+  let config;
 
   try {
-    [insumos, produtos, custoHora] = await Promise.all([
+    [insumos, produtos, custoHora, forno, canais, config] = await Promise.all([
       carregarInsumos(),
       carregarProdutos(),
       carregarCustoHora(),
+      carregarForno(),
+      carregarCanais(),
+      carregarConfig(),
     ]);
   } catch (err) {
     return (
@@ -41,7 +54,16 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
     );
   }
 
-  return <DetalheProduto produto={produto} insumos={insumos} custoHora={custoHora} />;
+  return (
+    <DetalheProduto
+      produto={produto}
+      insumos={insumos}
+      custoHora={custoHora}
+      forno={forno}
+      canais={canais}
+      config={config}
+    />
+  );
 }
 
 export default async function PaginaDetalheProduto({

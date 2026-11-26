@@ -4,31 +4,42 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { criarProduto } from "@/app/actions";
-import { brl, formatarMinutos, nivelMargem, type Produto, type ResultadoProduto } from "@/lib/calc";
+import { brl, formatarMinutos, nivelMargem } from "@/lib/calc";
+import type { ProdutoPainel, ResumoCanal } from "@/lib/custo-completo";
 import { BadgeMargem, BarraCusto } from "./IndicadorMargem";
 import { useSalvar } from "./useSalvar";
 
 type Filtro = "todos" | "atencao" | "boas";
 
+function piorCanal(item: ProdutoPainel): ResumoCanal | null {
+  if (item.canais.length === 0) return null;
+  return item.canais.reduce((pior, atual) =>
+    atual.margemPct < pior.margemPct ? atual : pior,
+  );
+}
+
+function margemReferencia(item: ProdutoPainel): number {
+  const canal = piorCanal(item);
+  return canal ? canal.margemPct : item.resultado.margemPct;
+}
+
 export function ListaProdutos({
-  produtos,
-  resultados,
+  itens,
 }: {
-  produtos: Produto[];
-  resultados: ResultadoProduto[];
+  itens: ProdutoPainel[];
 }) {
   const router = useRouter();
   const [filtro, setFiltro] = useState<Filtro>("todos");
   const [criado, setCriado] = useState(false);
   const { pendente, erro, salvar } = useSalvar();
 
-  const porId = new Map(produtos.map((p) => [p.id, p]));
-  const qtdAtencao = resultados.filter((r) => nivelMargem(r.margemPct) !== "good").length;
-  const qtdBoas = resultados.length - qtdAtencao;
+  const qtdAtencao = itens.filter((item) => nivelMargem(margemReferencia(item)) !== "good").length;
+  const qtdBoas = itens.length - qtdAtencao;
 
-  const visiveis = resultados.filter((r) => {
-    if (filtro === "atencao") return nivelMargem(r.margemPct) !== "good";
-    if (filtro === "boas") return nivelMargem(r.margemPct) === "good";
+  const visiveis = itens.filter((item) => {
+    const nivel = nivelMargem(margemReferencia(item));
+    if (filtro === "atencao") return nivel !== "good";
+    if (filtro === "boas") return nivel === "good";
     return true;
   });
 
@@ -68,14 +79,14 @@ export function ListaProdutos({
         </div>
       )}
 
-      {resultados.length > 0 && (
+      {itens.length > 0 && (
         <div className="filter-row" role="group" aria-label="Filtrar produtos por margem">
           <button
             type="button"
             className={`filter-pill tnum${filtro === "todos" ? " is-active" : ""}`}
             onClick={() => setFiltro("todos")}
           >
-            Todos ({resultados.length})
+            Todos ({itens.length})
           </button>
           <button
             type="button"
@@ -94,7 +105,7 @@ export function ListaProdutos({
         </div>
       )}
 
-      {resultados.length === 0 ? (
+      {itens.length === 0 ? (
         <div className="estado-vazio">
           <h2>Nenhum produto cadastrado</h2>
           <p>Crie o primeiro produto para montar a receita e calcular o custo por unidade.</p>
@@ -109,9 +120,10 @@ export function ListaProdutos({
         </div>
       ) : (
         <div className="stack-list">
-          {visiveis.map((r) => {
-            const prod = porId.get(r.produtoId);
-            const alertas = prod?.linhas.filter((l) => Boolean(l.alerta)).length ?? 0;
+          {visiveis.map((item) => {
+            const { produto: prod, resultado: r, canais } = item;
+            const margemRef = margemReferencia(item);
+            const alertas = prod.linhas.filter((l) => Boolean(l.alerta)).length;
 
             return (
               <Link
@@ -121,7 +133,7 @@ export function ListaProdutos({
               >
                 <div className="product-card-top">
                   <h2 className="product-name">{r.nome}</h2>
-                  <BadgeMargem margemPct={r.margemPct} />
+                  <BadgeMargem margemPct={margemRef} />
                 </div>
 
                 <BarraCusto resultado={r} />
@@ -132,31 +144,47 @@ export function ListaProdutos({
                     <div className="metric-value tnum">{brl(r.custoUnitario)}</div>
                     <div className="metric-sub tnum">
                       {r.custoMaoDeObra > 0
-                        ? `direto ${brl(r.custoDireto / r.rendimento)}`
+                        ? `direto ${brl(r.custoDireto / r.unidadesBoas)}`
                         : `${r.rendimento} un/lote`}
                     </div>
                   </div>
                   <div>
-                    <div className="metric-label">Preço atual</div>
+                    <div className="metric-label">Preço geral</div>
                     <div className="metric-value tnum">{brl(r.precoVenda)}</div>
-                    <div className="metric-sub tnum">sobra {brl(r.margem)}/un</div>
-                  </div>
-                  <div>
-                    <div className="metric-label tnum">
-                      Sugerido ({prod?.markupAlvo.toFixed(1) ?? "3.5"}×)
+                    <div className="metric-sub tnum">
+                      {prod.perdaPct > 0
+                        ? `${r.unidadesBoas.toFixed(1).replace(".", ",")} un boas`
+                        : `sobra ${brl(r.margem)}/un`}
                     </div>
-                    <div className="metric-value tnum">{brl(r.precoSugerido)}</div>
-                    <div className="metric-sub tnum">markup {r.markup.toFixed(2)}×</div>
                   </div>
                 </div>
+
+                {canais.length > 0 && (
+                  <div className="produto-canais">
+                    {canais.map((canal) => (
+                      <div key={canal.canalId} className="produto-canal-col">
+                        <div className="produto-canal-head">
+                          <span className="produto-canal-nome">{canal.nome}</span>
+                          <span className={`badge badge--${canal.nivel} tnum`}>
+                            {canal.margemPct.toFixed(0)}%
+                          </span>
+                        </div>
+                        <span className="produto-canal-preco tnum">{brl(canal.preco)}</span>
+                        <span className="produto-canal-sub">
+                          {canal.precoHerdado ? "igual ao geral" : `sobra ${brl(canal.margem)}/un`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 <div className="product-foot">
                   <span>
                     {alertas > 0
                       ? `${alertas} ${alertas === 1 ? "item" : "itens"} para conferir na receita`
-                      : r.minutosLote > 0
-                        ? `Mão de obra: ${formatarMinutos(r.minutosLote)} por lote`
-                        : "Sem tempo de mão de obra definido"}
+                      : r.minutosLote > 0 || prod.minutosForno > 0
+                        ? `Trabalho ${formatarMinutos(r.minutosLote)}${prod.minutosForno > 0 ? ` · forno ${formatarMinutos(prod.minutosForno)}` : ""}`
+                        : "Sem tempo de mão de obra ou forno"}
                   </span>
                   <span>Editar receita &rsaquo;</span>
                 </div>

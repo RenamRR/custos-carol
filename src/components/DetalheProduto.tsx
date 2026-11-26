@@ -11,6 +11,7 @@ import {
   removerEmbalagemProduto,
   removerLinha,
   removerProduto,
+  salvarCustoProduto,
   salvarEmbalagemProduto,
   salvarLinha,
   salvarPrecoProduto,
@@ -23,13 +24,15 @@ import {
   custoPorUnidadeDeMedida,
   formatarMinutos,
   parseNumeroBR,
+  resumoCanais,
   type Insumo,
   type LinhaEmbalagem,
   type LinhaReceita,
-  type Produto,
 } from "@/lib/calc";
+import type { Canal, Config, Forno, ProdutoCompleto } from "@/lib/custo-completo";
 import { BadgeMargem, BarraCusto } from "./IndicadorMargem";
-import { desfocarNoEnter, paraCampo, useSalvar } from "./useSalvar";
+import { CartaoPrecoCanal } from "./CartaoPrecoCanal";
+import { desfocarNoEnter, paraCampo, paraPreco, useSalvar } from "./useSalvar";
 
 function CardLinhaIngrediente({
   linha,
@@ -244,13 +247,20 @@ export function DetalheProduto({
   produto,
   insumos,
   custoHora,
+  forno,
+  canais,
+  config,
 }: {
-  produto: Produto;
+  produto: ProdutoCompleto;
   insumos: Insumo[];
   custoHora: number;
+  forno: Forno;
+  canais: Canal[];
+  config: Config;
 }) {
   const router = useRouter();
   const dadosSave = useSalvar();
+  const custoFornoSave = useSalvar();
   const linhaAddSave = useSalvar();
   const embAddSave = useSalvar();
 
@@ -261,20 +271,22 @@ export function DetalheProduto({
 
   const [nome, setNome] = useState(produto.nome);
   const [rendimento, setRendimento] = useState(paraCampo(produto.rendimento, 4));
-  const [markupAlvo, setMarkupAlvo] = useState(paraCampo(produto.markupAlvo, 2));
-  const [precoVenda, setPrecoVenda] = useState(paraCampo(produto.precoVenda, 2));
+  const [precoVenda, setPrecoVenda] = useState(paraPreco(produto.precoVenda));
   const [minutosPreparo, setMinutosPreparo] = useState(paraCampo(produto.minutosPreparo, 2));
   const [minutosAcabamentoUn, setMinutosAcabamentoUn] = useState(
     paraCampo(produto.minutosAcabamentoUn, 2),
   );
+  const [minutosForno, setMinutosForno] = useState(paraCampo(produto.minutosForno, 2));
+  const [perdaPct, setPerdaPct] = useState(paraCampo(produto.perdaPct, 2));
 
   useEffect(() => {
     setNome(produto.nome);
     setRendimento(paraCampo(produto.rendimento, 4));
-    setMarkupAlvo(paraCampo(produto.markupAlvo, 2));
-    setPrecoVenda(paraCampo(produto.precoVenda, 2));
+    setPrecoVenda(paraPreco(produto.precoVenda));
     setMinutosPreparo(paraCampo(produto.minutosPreparo, 2));
     setMinutosAcabamentoUn(paraCampo(produto.minutosAcabamentoUn, 2));
+    setMinutosForno(paraCampo(produto.minutosForno, 2));
+    setPerdaPct(paraCampo(produto.perdaPct, 2));
   }, [produto]);
 
   useEffect(() => {
@@ -297,24 +309,33 @@ export function DetalheProduto({
   const materiais = insumos.filter((i) => i.tipo === "embalagem");
   const porId = new Map(insumos.map((i) => [i.id, i]));
 
-  const produtoAoVivo: Produto = {
+  const perdaNum = Math.min(89.99, Math.max(0, parseNumeroBR(perdaPct)));
+  const minutosFornoNum = Math.max(0, parseNumeroBR(minutosForno));
+
+  const produtoAoVivo: ProdutoCompleto = {
     ...produto,
     nome,
     rendimento: parseNumeroBR(rendimento) || produto.rendimento,
-    markupAlvo: parseNumeroBR(markupAlvo),
     precoVenda: parseNumeroBR(precoVenda),
     minutosPreparo: parseNumeroBR(minutosPreparo),
     minutosAcabamentoUn: parseNumeroBR(minutosAcabamentoUn),
+    minutosForno: minutosFornoNum,
+    perdaPct: perdaNum,
   };
 
-  const r = calcularProduto(produtoAoVivo, insumos, custoHora);
+  const r = calcularProduto(produtoAoVivo, insumos, custoHora, forno.custoMinuto);
+  const canaisResumo = resumoCanais(produtoAoVivo, r.custoUnitario, canais, config.impostoPct);
+  const canaisPorId = new Map(canais.map((c) => [c.id, c]));
+
+  const somaSegmentos = (tipo: string) =>
+    r.segmentos.filter((s) => s.tipo === tipo).reduce((acc, s) => acc + s.valor, 0);
 
   const categorias = [
     {
       chave: "ingredientes",
       nome: "Ingredientes",
       nota: `${produto.linhas.length} ${produto.linhas.length === 1 ? "item" : "itens"} na receita`,
-      valor: r.custoInsumos,
+      valor: somaSegmentos("ingrediente"),
       cor: "var(--r1)",
     },
     {
@@ -331,10 +352,50 @@ export function DetalheProduto({
         r.minutosLote > 0
           ? `${formatarMinutos(r.minutosLote)} no lote · ${custoHora > 0 ? `${brl(custoHora)}/h` : "hora zerada"}`
           : "Sem tempo lançado",
-      valor: r.custoMaoDeObra,
+      valor: somaSegmentos("mao-de-obra"),
       cor: "var(--r-labor)",
     },
+    ...(r.custoForno > 0
+      ? [
+          {
+            chave: "forno",
+            nome: "Forno",
+            nota: `${formatarMinutos(minutosFornoNum)} no lote · ${brl(forno.custoHora)}/h`,
+            valor: somaSegmentos("forno"),
+            cor: "var(--r-oven)",
+          },
+        ]
+      : []),
+    ...(r.custoPerda > 0
+      ? [
+          {
+            chave: "perda",
+            nome: "Perda",
+            nota: `${paraCampo(perdaNum, 2)}% do lote perdido`,
+            valor: r.custoPerda,
+            cor: "var(--r-loss)",
+          },
+        ]
+      : []),
   ].sort((a, b) => b.valor - a.valor);
+
+  function salvarFornoEPerda() {
+    custoFornoSave.limparErro();
+    const minStr = minutosForno.trim();
+    const perdaStr = perdaPct.trim();
+    const minFmt = paraCampo(Math.max(0, parseNumeroBR(minStr)), 2);
+    const perdaFmt = paraCampo(Math.max(0, parseNumeroBR(perdaStr)), 2);
+    setMinutosForno(minFmt);
+    setPerdaPct(perdaFmt);
+    custoFornoSave.salvar(
+      () =>
+        salvarCustoProduto(produto.id, {
+          minutosForno: minStr || "0",
+          perdaPct: perdaStr || "0",
+        }),
+      () => router.refresh(),
+    );
+  }
 
   function salvarDadosProduto() {
     dadosSave.limparErro();
@@ -343,7 +404,7 @@ export function DetalheProduto({
         salvarProduto(produto.id, {
           nome,
           rendimento,
-          markupAlvo,
+          markupAlvo: String(produto.markupAlvo),
           minutosPreparo,
           minutosAcabamentoUn,
         }),
@@ -455,8 +516,10 @@ export function DetalheProduto({
       <div>
         <h1 className="page-title">{nome || produto.nome}</h1>
         <p className="page-sub tnum">
-          Rende {paraCampo(r.rendimento, 2)} unidades por lote
+          Rende {paraCampo(r.rendimento, 2)} unidades
+          {perdaNum > 0 ? ` (${paraCampo(r.unidadesBoas, 2)} boas)` : ""} por lote
           {r.minutosLote > 0 ? ` · ${formatarMinutos(r.minutosLote)} de mão de obra` : ""}
+          {minutosFornoNum > 0 ? ` · ${formatarMinutos(minutosFornoNum)} de forno` : ""}
         </p>
       </div>
 
@@ -478,7 +541,6 @@ export function DetalheProduto({
       <section className="card" aria-label="De onde vem o custo">
         <div className="section-row" style={{ marginBottom: 10 }}>
           <h2 className="section-heading">De onde vem o custo</h2>
-          <span className="badge badge--cream tnum">Sugerido {brl(r.precoSugerido)}</span>
         </div>
 
         <BarraCusto resultado={r} />
@@ -496,7 +558,7 @@ export function DetalheProduto({
                   </div>
                 </div>
                 <div className="cost-row-right">
-                  <span className="cost-val tnum">{brl(cat.valor / r.rendimento)}/un</span>
+                  <span className="cost-val tnum">{brl(cat.valor / r.unidadesBoas)}/un</span>
                   <span className="cost-pct tnum">
                     {pct.toFixed(0)}% · {brl(cat.valor)} lote
                   </span>
@@ -506,6 +568,34 @@ export function DetalheProduto({
           })}
         </div>
       </section>
+
+      {canaisResumo.length > 0 && (
+        <section className="card" aria-label="Preço por canal">
+          <div className="section-row" style={{ marginBottom: 6 }}>
+            <h2 className="section-heading">Preço por canal</h2>
+          </div>
+          <p className="section-note" style={{ marginBottom: 12 }}>
+            Margem líquida considerando a pior taxa aceita
+            {config.impostoPct > 0 ? ` e ${paraCampo(config.impostoPct, 4)}% de imposto` : ""}.
+          </p>
+
+          <div className="canal-preco-list">
+            {canaisResumo.map((canalResumo) => {
+              const canalCfg = canaisPorId.get(canalResumo.canalId);
+              return (
+                <CartaoPrecoCanal
+                  key={canalResumo.canalId}
+                  produtoId={produto.id}
+                  canal={canalResumo}
+                  custoUnitario={r.custoUnitario}
+                  margemAlvoPct={canalCfg?.margemAlvoPct ?? 50}
+                  impostoPct={config.impostoPct}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className={`card${dadosSave.pendente ? " salvando" : ""}`} aria-label="Dados básicos do produto">
         <h2 className="section-heading" style={{ marginBottom: 12 }}>
@@ -528,7 +618,7 @@ export function DetalheProduto({
 
           <div className="field-group">
             <label className="field-label" htmlFor="prod-preco">
-              Preço de venda (R$)
+              Preço geral (R$)
             </label>
             <input
               id="prod-preco"
@@ -538,14 +628,14 @@ export function DetalheProduto({
               onChange={(e) => setPrecoVenda(e.target.value)}
               onKeyDown={desfocarNoEnter}
               onBlur={() => {
-                setPrecoVenda(paraCampo(parseNumeroBR(precoVenda), 2));
+                setPrecoVenda(paraPreco(parseNumeroBR(precoVenda)));
                 dadosSave.salvar(
                   () => salvarPrecoProduto(produto.id, precoVenda),
                   () => router.refresh(),
                 );
               }}
             />
-            <span className="field-hint">Mudar grava no histórico</span>
+            <span className="field-hint">Vale nos canais sem preço próprio</span>
           </div>
 
           <div className="field-group">
@@ -566,29 +656,13 @@ export function DetalheProduto({
             />
           </div>
 
-          <div className="field-group">
-            <label className="field-label" htmlFor="prod-markup">
-              Markup alvo
-            </label>
-            <input
-              id="prod-markup"
-              className="field-input field-input--num"
-              inputMode="decimal"
-              value={markupAlvo}
-              onChange={(e) => setMarkupAlvo(e.target.value)}
-              onKeyDown={desfocarNoEnter}
-              onBlur={() => {
-                setMarkupAlvo(paraCampo(parseNumeroBR(markupAlvo), 2));
-                salvarDadosProduto();
-              }}
-            />
-          </div>
-
-          <div className="field-group" style={{ justifyContent: "center" }}>
-            <span className="field-label">Sobra por unidade</span>
-            <strong className="tnum" style={{ fontSize: 18 }}>
-              {brl(r.margem)}
-            </strong>
+          <div className="field-group form-span-2">
+            <div className="section-row">
+              <span className="field-label">Sobra por unidade</span>
+              <strong className="tnum" style={{ fontSize: 18 }}>
+                {brl(r.margem)}
+              </strong>
+            </div>
           </div>
         </div>
       </section>
@@ -656,7 +730,7 @@ export function DetalheProduto({
                 linha={e}
                 materiais={materiais}
                 porId={porId}
-                rendimento={r.rendimento}
+                rendimento={r.unidadesBoas}
               />
             ))
           )}
@@ -678,6 +752,85 @@ export function DetalheProduto({
             {embAddSave.pendente ? "Adicionando..." : "+ Adicionar embalagem"}
           </button>
         </div>
+      </section>
+
+      <section
+        id="forno"
+        className={`card${custoFornoSave.pendente ? " salvando" : ""}`}
+        aria-label="Forno e perda do lote"
+      >
+        <div className="section-row" style={{ marginBottom: 10 }}>
+          <div>
+            <h2 className="section-heading">Forno e perda</h2>
+            <p className="page-sub">Tempo de forno e quebra esperada do lote</p>
+          </div>
+          <strong className="tnum">{brl(r.custoForno)}</strong>
+        </div>
+
+        <div className="form-grid-2">
+          <div className="field-group">
+            <label className="field-label" htmlFor="prod-forno">
+              Forno (min/lote)
+            </label>
+            <input
+              id="prod-forno"
+              className="field-input field-input--num"
+              inputMode="decimal"
+              value={minutosForno}
+              onChange={(e) => setMinutosForno(e.target.value)}
+              onKeyDown={desfocarNoEnter}
+              onBlur={salvarFornoEPerda}
+            />
+          </div>
+
+          <div className="field-group">
+            <label className="field-label" htmlFor="prod-perda">
+              Perda (%)
+            </label>
+            <div className="field-with-suffix">
+              <input
+                id="prod-perda"
+                className="field-input field-input--num"
+                inputMode="decimal"
+                value={perdaPct}
+                onChange={(e) => setPerdaPct(e.target.value)}
+                onKeyDown={desfocarNoEnter}
+                onBlur={salvarFornoEPerda}
+              />
+              <span className="field-suffix">%</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 12 }}>
+          {minutosFornoNum > 0 && !forno.informado ? (
+            <div className="banner-aviso">
+              O gás do forno não foi informado ainda.{" "}
+              <Link href="/mais#forno" style={{ color: "inherit", fontWeight: 800 }}>
+                Defina em Mais &rarr;
+              </Link>
+            </div>
+          ) : (
+            <p className="page-sub" style={{ margin: 0 }}>
+              Rendendo <b className="tnum">{paraCampo(r.unidadesBoas, 2)}</b> unidades boas
+              {r.custoPerda > 0 ? (
+                <>
+                  {" "}
+                  · perda de <b className="tnum">{brl(r.custoPerda)}</b> no lote (
+                  <b className="tnum">{brl(r.custoPerdaPorUnidade)}/un</b>)
+                </>
+              ) : (
+                "."
+              )}
+            </p>
+          )}
+        </div>
+
+        {custoFornoSave.erro && (
+          <div className="banner-erro" role="alert" style={{ marginTop: 10 }}>
+            {custoFornoSave.erro}
+          </div>
+        )}
       </section>
 
       <section className={`card${dadosSave.pendente ? " salvando" : ""}`} aria-label="Tempos de mão de obra">
@@ -731,14 +884,14 @@ export function DetalheProduto({
           {custoHora === 0 ? (
             <div className="banner-aviso">
               O valor da hora está zerado.{" "}
-              <Link href="/mais" style={{ color: "inherit", fontWeight: 800 }}>
+              <Link href="/mais#mao-de-obra" style={{ color: "inherit", fontWeight: 800 }}>
                 Defina em Mais &rarr;
               </Link>
             </div>
           ) : (
             <p className="page-sub" style={{ margin: 0 }}>
               Total no lote: <b className="tnum">{formatarMinutos(r.minutosLote)}</b> ·{" "}
-              <b className="tnum">{brl(r.custoMaoDeObra / r.rendimento)}</b> por unidade.
+              <b className="tnum">{brl(r.custoMaoDeObra / r.unidadesBoas)}</b> por unidade.
             </p>
           )}
         </div>

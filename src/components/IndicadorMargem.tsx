@@ -5,6 +5,8 @@ const RAMPA = ["--r1", "--r2", "--r3", "--r4", "--r5", "--r6"];
 export function corDoSegmento(tipo: string, indiceIngrediente: number): string {
   if (tipo === "embalagem") return "var(--r-pack)";
   if (tipo === "mao-de-obra") return "var(--r-labor)";
+  if (tipo === "forno") return "var(--r-oven)";
+  if (tipo === "perda") return "var(--r-loss)";
   return `var(${RAMPA[Math.min(indiceIngrediente, RAMPA.length - 1)]})`;
 }
 

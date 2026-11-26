@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc, isNull, isNotNull, lte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getDb } from "@/db";
 import {
@@ -15,10 +15,54 @@ import {
 import { num, parseNumeroBR } from "@/lib/calc";
 
 import { exigirUsuario } from "@/lib/auth";
+import * as custos from "@/lib/gravacoes-custo";
 
 export type Resultado = { ok: true } | { ok: false; erro: string };
 
 const OK: Resultado = { ok: true };
+
+export async function salvarForno(precoBotijao: string, horasPorBotijao: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarForno(usuario.id, precoBotijao, horasPorBotijao);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarPrecoCanal(produtoId: number, canalId: number, preco: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarPrecoCanal(usuario.id, produtoId, canalId, preco);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarMargemAlvoCanal(canalId: number, pct: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarMargemAlvoCanal(usuario.id, canalId, pct);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarTaxaForma(formaId: number, pct: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarTaxaForma(usuario.id, formaId, pct);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function alternarFormaCanal(canalId: number, formaId: number, aceita: boolean): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.alternarFormaCanal(usuario.id, canalId, formaId, aceita);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarImposto(pct: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarImposto(usuario.id, pct);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+export async function salvarCustoProduto(id: number, campos: { minutosForno: string; perdaPct: string }): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.salvarCustoProduto(usuario.id, id, campos);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
 const falha = (erro: string): Resultado => ({ ok: false, erro });
 
 /** Preço só vira registro novo se mudou de fato — senão o histórico enche de ruído. */
@@ -199,10 +243,16 @@ export async function salvarPrecoProduto(id: number, preco: string): Promise<Res
   if (ehFalha(valor)) return valor;
 
   const db = getDb();
+  // Só o preço GERAL (canal_id null): um preço de canal mais recente não pode fazer o geral
+  // parecer "igual" e a gravação ser pulada.
   const [atual] = await db
     .select({ preco: produtoPrecos.preco })
     .from(produtoPrecos)
-    .where(eq(produtoPrecos.produtoId, id))
+    .where(and(
+      eq(produtoPrecos.produtoId, id),
+      isNull(produtoPrecos.canalId),
+      lte(produtoPrecos.vigenteDesde, sql`now()`),
+    ))
     .orderBy(desc(produtoPrecos.vigenteDesde), desc(produtoPrecos.id))
     .limit(1);
 
@@ -228,7 +278,10 @@ export async function criarProduto(): Promise<Resultado> {
   return OK;
 }
 
-/** Copia receita, embalagem e preço de venda vigente. O histórico não é copiado. */
+/**
+ * Copia receita, embalagem, tempos, forno, perda, o preço geral vigente e o preço vigente de cada
+ * canal que tem preço próprio. O histórico não é copiado.
+ */
 export async function duplicarProduto(id: number): Promise<Resultado> {
   const usuario = await exigirUsuario();
   const db = getDb();
@@ -245,13 +298,19 @@ export async function duplicarProduto(id: number): Promise<Resultado> {
         markupAlvo: original.markupAlvo,
         minutosPreparo: original.minutosPreparo,
         minutosAcabamentoUn: original.minutosAcabamentoUn,
+        minutosForno: original.minutosForno,
+        perdaPct: original.perdaPct,
       })
       .returning({ id: produtos.id });
 
     const [preco] = await tx
       .select({ preco: produtoPrecos.preco })
       .from(produtoPrecos)
-      .where(eq(produtoPrecos.produtoId, id))
+      .where(and(
+        eq(produtoPrecos.produtoId, id),
+        isNull(produtoPrecos.canalId),
+        lte(produtoPrecos.vigenteDesde, sql`now()`),
+      ))
       .orderBy(desc(produtoPrecos.vigenteDesde), desc(produtoPrecos.id))
       .limit(1);
 
@@ -261,6 +320,32 @@ export async function duplicarProduto(id: number): Promise<Resultado> {
       preco: preco?.preco ?? "0",
       nota: `Copiado de ${original.nome}`,
     });
+
+    // Preço próprio de cada canal: a linha vigente mais recente por canal_id.
+    const porCanal = await tx
+      .selectDistinctOn([produtoPrecos.canalId], {
+        canalId: produtoPrecos.canalId,
+        preco: produtoPrecos.preco,
+      })
+      .from(produtoPrecos)
+      .where(and(
+        eq(produtoPrecos.produtoId, id),
+        isNotNull(produtoPrecos.canalId),
+        lte(produtoPrecos.vigenteDesde, sql`now()`),
+      ))
+      .orderBy(produtoPrecos.canalId, desc(produtoPrecos.vigenteDesde), desc(produtoPrecos.id));
+
+    if (porCanal.length > 0) {
+      await tx.insert(produtoPrecos).values(
+        porCanal.map((p) => ({
+          alteradoPor: usuario.id,
+          produtoId: novo.id,
+          canalId: p.canalId,
+          preco: p.preco,
+          nota: `Copiado de ${original.nome}`,
+        })),
+      );
+    }
 
     const linhas = await tx
       .select()

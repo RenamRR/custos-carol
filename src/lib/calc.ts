@@ -8,6 +8,9 @@
  *   - mão de obra        → preparo por LOTE + acabamento por UNIDADE
  */
 
+import type { Canal, Forno, Pendencia, ProdutoCompleto, ResumoCanal } from "./custo-completo";
+import { PERDA_MAXIMA_PCT, pontoEhMilhar } from "./validacao-custo";
+
 export type TipoInsumo = "ingrediente" | "embalagem";
 
 export interface Insumo {
@@ -48,11 +51,14 @@ export interface Produto {
   minutosPreparo: number;
   /** Minutos por unidade — cresce com o rendimento. */
   minutosAcabamentoUn: number;
+  /** Opcionais só para compatibilidade com fixtures/consumidores da etapa 1. */
+  minutosForno?: number;
+  perdaPct?: number;
   linhas: LinhaReceita[];
   embalagens: LinhaEmbalagem[];
 }
 
-export type TipoSegmento = "ingrediente" | "embalagem" | "mao-de-obra";
+export type TipoSegmento = "ingrediente" | "embalagem" | "mao-de-obra" | "forno" | "perda";
 
 export interface Segmento {
   nome: string;
@@ -68,6 +74,11 @@ export interface ResultadoProduto {
   custoEmbalagem: number;
   custoEmbalagemPorUnidade: number;
   custoMaoDeObra: number;
+  custoForno: number;
+  /** Parcela do lote realocada ao segmento Perda; não é somada novamente ao total. */
+  custoPerda: number;
+  custoPerdaPorUnidade: number;
+  unidadesBoas: number;
   minutosLote: number;
   /** Insumo + embalagem, sem mão de obra. */
   custoDireto: number;
@@ -112,7 +123,7 @@ export function minutosDoLote(produto: Produto, rendimento: number): number {
  * Margem de contribuição: quanto sobra do preço depois de insumo, embalagem e mão de obra.
  *
  * O corte é exigente porque o que sobra ainda precisa pagar o que este sistema não
- * custeia: energia, perda, taxa de cartão, imposto e rateio de custo fixo.
+ * custeia, como o rateio do custo fixo do evento (etapa 3).
  */
 export function nivelMargem(margemPct: number): Nivel {
   if (margemPct >= 50) return "good";
@@ -131,6 +142,7 @@ export function calcularProduto(
   produto: Produto,
   insumos: Insumo[],
   custoHora = 0,
+  custoMinutoForno = 0,
 ): ResultadoProduto {
   const porId = new Map(insumos.map((i) => [i.id, i]));
   const segmentos: Segmento[] = [];
@@ -144,25 +156,36 @@ export function calcularProduto(
   }
 
   const rendimento = produto.rendimento > 0 ? produto.rendimento : 1;
+  const perdaPct = produto.perdaPct ?? 0;
+  if (!Number.isFinite(perdaPct) || perdaPct < 0 || perdaPct > PERDA_MAXIMA_PCT) throw new RangeError("Perda inválida.");
+  const fracaoBoa = 1 - perdaPct / 100;
+  const unidadesBoas = rendimento * fracaoBoa;
   const custoEmbalagemPorUnidade = embalagemPorUnidade(produto, insumos);
-  const custoEmbalagem = custoEmbalagemPorUnidade * rendimento;
+  const custoEmbalagem = custoEmbalagemPorUnidade * unidadesBoas;
 
-  const minutosLote = minutosDoLote(produto, rendimento);
+  const minutosLote = minutosDoLote(produto, unidadesBoas);
   const custoMaoDeObra = (minutosLote / 60) * custoHora;
+  const custoPreparo = (produto.minutosPreparo / 60) * custoHora;
+  const custoForno = (produto.minutosForno ?? 0) * custoMinutoForno;
+  const custoPerda = (custoInsumos + custoPreparo + custoForno) * (perdaPct / 100);
+  // ADR-002: decompõe o mesmo lote, sem cobrar a perda duas vezes.
+  for (const segmento of segmentos) segmento.valor *= fracaoBoa;
 
   const custoDireto = custoInsumos + custoEmbalagem;
-  const custoTotal = custoDireto + custoMaoDeObra;
-  const custoUnitario = custoTotal / rendimento;
+  const custoTotal = custoDireto + custoMaoDeObra + custoForno;
+  const custoUnitario = custoTotal / unidadesBoas;
   const precoVenda = produto.precoVenda;
 
   if (custoEmbalagem > 0) {
     segmentos.push({ nome: "Embalagem", valor: custoEmbalagem, tipo: "embalagem" });
   }
   if (custoMaoDeObra > 0) {
-    segmentos.push({ nome: "Mão de obra", valor: custoMaoDeObra, tipo: "mao-de-obra" });
+    segmentos.push({ nome: "Mão de obra", valor: custoMaoDeObra - custoPreparo * (perdaPct / 100), tipo: "mao-de-obra" });
   }
+  if (custoForno > 0) segmentos.push({ nome: "Forno", valor: custoForno * fracaoBoa, tipo: "forno" });
+  if (custoPerda > 0) segmentos.push({ nome: "Perda", valor: custoPerda, tipo: "perda" });
 
-  const custoDiretoUnitario = custoDireto / rendimento;
+  const custoDiretoUnitario = custoDireto / unidadesBoas;
 
   return {
     produtoId: produto.id,
@@ -172,6 +195,10 @@ export function calcularProduto(
     custoEmbalagem,
     custoEmbalagemPorUnidade,
     custoMaoDeObra,
+    custoForno,
+    custoPerda,
+    custoPerdaPorUnidade: custoPerda / unidadesBoas,
+    unidadesBoas,
     minutosLote,
     custoDireto,
     custoTotal,
@@ -183,6 +210,57 @@ export function calcularProduto(
     markup: custoDiretoUnitario > 0 ? precoVenda / custoDiretoUnitario : 0,
     precoSugerido: custoUnitario * produto.markupAlvo,
   };
+}
+
+export function margemNoCanal(custoUn: number, preco: number, taxaPct: number, impostoPct: number) {
+  const margem = preco - custoUn - preco * (taxaPct + impostoPct) / 100;
+  const margemPct = preco > 0 ? margem / preco * 100 : 0;
+  return { margem, margemPct, nivel: nivelMargem(margemPct) };
+}
+
+export function precoSugerido(custoUn: number, margemAlvoPct: number, taxaPct: number, impostoPct: number): number | null {
+  if (![custoUn, margemAlvoPct, taxaPct, impostoPct].every((v) => Number.isFinite(v) && v >= 0)) return null;
+  const divisor = 1 - (margemAlvoPct + taxaPct + impostoPct) / 100;
+  return divisor > 0 ? custoUn / divisor : null;
+}
+
+export function resumoCanais(produto: ProdutoCompleto, custoUn: number, canais: Canal[], impostoPct: number): ResumoCanal[] {
+  return canais.filter((c) => c.ativo).map((canal) => {
+    const formas = canal.formas.filter((f) => f.ativo);
+    // Só taxas informadas disputam o "pior caso". Forma sem taxa não vira "Pix 0%": vai para
+    // formasSemTaxa, e a tela avisa que a margem ainda não a considera.
+    const conhecidas = formas.filter((f): f is typeof f & { taxaPct: number } => f.taxaPct !== null);
+    const maisCara = conhecidas.reduce<(typeof conhecidas)[number] | null>((atual, forma) =>
+      !atual || forma.taxaPct > atual.taxaPct ? forma : atual, null);
+    const taxaPct = maisCara?.taxaPct ?? 0;
+    const formasSemTaxa = formas.filter((f) => f.taxaPct === null).map((f) => f.nome);
+    const preco = produto.precosPorCanal.find((p) => p.canalId === canal.id);
+    const valor = preco?.preco ?? produto.precoVenda;
+    return {
+      canalId: canal.id, nome: canal.nome, preco: valor, precoHerdado: preco?.herdado ?? true,
+      taxaPct, formaMaisCara: maisCara?.nome ?? null, formasSemTaxa,
+      ...margemNoCanal(custoUn, valor, taxaPct, impostoPct),
+      precoSugerido: precoSugerido(custoUn, canal.margemAlvoPct, taxaPct, impostoPct),
+    };
+  });
+}
+
+export function faltaPreencher(produtos: ProdutoCompleto[], custoHora: number, forno: Forno, canais: Canal[]): Pendencia[] {
+  const itens: Pendencia[] = [];
+  if (custoHora === 0) itens.push({ id: "hora", mensagem: "Informe o valor da hora de trabalho", href: "/mais#mao-de-obra" });
+  if (!forno.informado) itens.push({ id: "forno", mensagem: "Informe o preço e a duração do botijão", href: "/mais#forno" });
+  for (const produto of produtos) {
+    if (produto.minutosForno === 0) itens.push({ id: `forno-${produto.id}`, mensagem: `Informe os minutos de forno de ${produto.nome}`, href: `/produtos/${produto.id}#forno` });
+  }
+  const desconhecidas = new Map<number, string>();
+  for (const canal of canais.filter((c) => c.ativo)) {
+    if (!canal.formas.some((f) => f.ativo)) itens.push({ id: `formas-${canal.id}`, mensagem: `Selecione uma forma de pagamento para ${canal.nome}`, href: "/mais#canais" });
+    for (const forma of canal.formas.filter((f) => f.ativo)) {
+      if (forma.taxaPct === null) desconhecidas.set(forma.id, forma.nome);
+    }
+  }
+  for (const [id, nome] of desconhecidas) itens.push({ id: `taxa-${id}`, mensagem: `Informe a taxa de ${nome}`, href: "/mais#formas-pagamento" });
+  return itens;
 }
 
 const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -210,7 +288,7 @@ export function parseNumeroBR(valor: string | number): number {
   if (typeof valor === "number") return Number.isFinite(valor) ? valor : 0;
   let s = valor.replace(/[R$\s]/g, "").trim();
   if (!s) return 0;
-  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  if (s.includes(",") || pontoEhMilhar(s)) s = s.replace(/\./g, "").replace(",", ".");
   const n = Number.parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }

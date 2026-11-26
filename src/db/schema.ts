@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   pgTable,
+  primaryKey,
   serial,
   text,
   numeric,
@@ -83,6 +84,8 @@ export const produtos = pgTable("produtos", {
   /** Quantas unidades a receita rende. */
   rendimento: numeric("rendimento", { precision: 14, scale: 4 }).notNull().default("12"),
   markupAlvo: numeric("markup_alvo", { precision: 8, scale: 2 }).notNull().default("3.50"),
+  minutosForno: numeric("minutos_forno", { precision: 14, scale: 2 }).notNull().default("0"),
+  perdaPct: numeric("perda_pct", { precision: 5, scale: 2 }).notNull().default("0"),
   /** Tempo do lote inteiro: bater, assar, esfriar. Não cresce com o rendimento. */
   minutosPreparo: numeric("minutos_preparo", { precision: 14, scale: 2 }).notNull().default("0"),
   /** Tempo por unidade: cortar, embalar, etiquetar. Cresce com o rendimento. */
@@ -91,7 +94,10 @@ export const produtos = pgTable("produtos", {
     .default("0"),
   ativo: boolean("ativo").notNull().default(true),
   criadoEm: timestamp("criado_em", { withTimezone: true }).notNull().defaultNow(),
-});
+}, (t) => [
+  check("produtos_minutos_forno_check", sql`${t.minutosForno} >= 0`),
+  check("produtos_perda_pct_check", sql`${t.perdaPct} >= 0 and ${t.perdaPct} < 90`),
+]);
 
 /**
  * Quanto vale uma hora de trabalho. Histórico pela mesma razão dos preços:
@@ -116,13 +122,70 @@ export const produtoPrecos = pgTable(
     produtoId: integer("produto_id")
       .notNull()
       .references(() => produtos.id, { onDelete: "cascade" }),
+    canalId: integer("canal_id").references(() => canais.id, { onDelete: "restrict" }),
     preco: numeric("preco", { precision: 14, scale: 4 }).notNull(),
     vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
     nota: text("nota"),
     alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
   },
-  (t) => [index("idx_produto_precos_lookup").on(t.produtoId, t.vigenteDesde)],
+  (t) => [
+    index("idx_produto_precos_lookup").on(t.produtoId, t.vigenteDesde),
+    index("idx_produto_precos_canal").on(t.produtoId, t.canalId, t.vigenteDesde.desc(), t.id.desc()),
+  ],
 );
+
+export const fornoCustos = pgTable("forno_custos", {
+  id: serial("id").primaryKey(),
+  precoBotijao: numeric("preco_botijao", { precision: 14, scale: 4 }).notNull(),
+  horasPorBotijao: numeric("horas_por_botijao", { precision: 14, scale: 4 }).notNull(),
+  vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
+  nota: text("nota"),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [
+  index("idx_forno_custos_vigente").on(t.vigenteDesde.desc(), t.id.desc()),
+  check("forno_custos_preco_botijao_check", sql`${t.precoBotijao} >= 0`),
+  check("forno_custos_horas_por_botijao_check", sql`${t.horasPorBotijao} > 0`),
+]);
+
+export const canais = pgTable("canais", {
+  id: serial("id").primaryKey(), nome: text("nome").notNull().unique(),
+  margemAlvoPct: numeric("margem_alvo_pct", { precision: 5, scale: 2 }).notNull().default("50"),
+  ativo: boolean("ativo").notNull().default(true), ordem: integer("ordem").notNull().default(0),
+  alteradoEm: timestamp("alterado_em", { withTimezone: true }).notNull().defaultNow(),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [check("canais_margem_alvo_pct_check", sql`${t.margemAlvoPct} between 0 and 95`)]);
+
+export const formasPagamento = pgTable("formas_pagamento", {
+  id: serial("id").primaryKey(), nome: text("nome").notNull().unique(),
+  ativo: boolean("ativo").notNull().default(true), ordem: integer("ordem").notNull().default(0),
+});
+
+export const formaPagamentoTaxas = pgTable("forma_pagamento_taxas", {
+  id: serial("id").primaryKey(),
+  formaId: integer("forma_id").notNull().references(() => formasPagamento.id, { onDelete: "restrict" }),
+  taxaPct: numeric("taxa_pct", { precision: 5, scale: 2 }).notNull(),
+  vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [
+  index("idx_forma_taxas_vigente").on(t.formaId, t.vigenteDesde.desc(), t.id.desc()),
+  check("forma_pagamento_taxas_taxa_pct_check", sql`${t.taxaPct} between 0 and 30`),
+]);
+
+export const canalFormas = pgTable("canal_formas", {
+  canalId: integer("canal_id").notNull().references(() => canais.id, { onDelete: "cascade" }),
+  formaId: integer("forma_id").notNull().references(() => formasPagamento.id, { onDelete: "cascade" }),
+}, (t) => [primaryKey({ columns: [t.canalId, t.formaId] })]);
+
+export const configuracaoValores = pgTable("configuracao_valores", {
+  id: serial("id").primaryKey(), chave: text("chave").notNull(),
+  valor: numeric("valor", { precision: 14, scale: 4 }).notNull(),
+  vigenteDesde: timestamp("vigente_desde", { withTimezone: true }).notNull().defaultNow(),
+  alteradoPor: integer("alterado_por").references(() => usuarios.id, { onDelete: "set null" }),
+}, (t) => [
+  index("idx_configuracao_valores_vigente").on(t.chave, t.vigenteDesde.desc(), t.id.desc()),
+  check("configuracao_imposto_check", sql`${t.chave} <> 'imposto_pct' or ${t.valor} between 0 and 50`),
+  check("configuracao_valores_chave_check", sql`${t.chave} in ('imposto_pct')`),
+]);
 
 /** Ingrediente na receita. Quantidade é **por receita inteira**. */
 export const receitaLinhas = pgTable(

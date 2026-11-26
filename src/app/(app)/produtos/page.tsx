@@ -3,22 +3,15 @@ import { CarregandoPainel } from "@/components/CarregandoPainel";
 import { EstadoErro } from "@/components/EstadoErro";
 import { ListaProdutos } from "@/components/ListaProdutos";
 import { exigirUsuario } from "@/lib/auth";
-import { calcularProduto } from "@/lib/calc";
-import { carregarCustoHora, carregarInsumos, carregarProdutos } from "@/lib/queries";
+import { carregarPainel } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 async function ConteudoProdutos() {
-  let insumos;
-  let produtos;
-  let custoHora;
+  let painel;
 
   try {
-    [insumos, produtos, custoHora] = await Promise.all([
-      carregarInsumos(),
-      carregarProdutos(),
-      carregarCustoHora(),
-    ]);
+    painel = await carregarPainel();
   } catch (err) {
     return (
       <EstadoErro
@@ -28,8 +21,7 @@ async function ConteudoProdutos() {
     );
   }
 
-  const resultados = produtos.map((p) => calcularProduto(p, insumos, custoHora));
-  return <ListaProdutos produtos={produtos} resultados={resultados} />;
+  return <ListaProdutos itens={painel.produtos} />;
 }
 
 export default async function PaginaProdutos() {

@@ -15,7 +15,7 @@ import {
   type Insumo,
   type TipoInsumo,
 } from "@/lib/calc";
-import { desfocarNoEnter, paraCampo, useSalvar } from "./useSalvar";
+import { desfocarNoEnter, paraCampo, paraPreco, useSalvar } from "./useSalvar";
 
 function CardInsumo({ insumo }: { insumo: Insumo }) {
   const router = useRouter();
@@ -25,7 +25,7 @@ function CardInsumo({ insumo }: { insumo: Insumo }) {
   const [embalagem, setEmbalagem] = useState(insumo.embalagem);
   const [qtd, setQtd] = useState(paraCampo(insumo.qtd, 4));
   const [unidade, setUnidade] = useState(insumo.unidade);
-  const [preco, setPreco] = useState(paraCampo(insumo.preco, 2));
+  const [preco, setPreco] = useState(paraPreco(insumo.preco));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [salvoHistorico, setSalvoHistorico] = useState(false);
 
@@ -34,7 +34,7 @@ function CardInsumo({ insumo }: { insumo: Insumo }) {
     setEmbalagem(insumo.embalagem);
     setQtd(paraCampo(insumo.qtd, 4));
     setUnidade(insumo.unidade);
-    setPreco(paraCampo(insumo.preco, 2));
+    setPreco(paraPreco(insumo.preco));
   }, [insumo]);
 
   function salvarCampos() {
@@ -48,7 +48,7 @@ function CardInsumo({ insumo }: { insumo: Insumo }) {
     limparErro();
     const novoValor = parseNumeroBR(preco);
     const mudou = Math.abs(novoValor - insumo.preco) > 0.00005;
-    setPreco(paraCampo(novoValor, 2));
+    setPreco(paraPreco(novoValor));
     salvar(
       () => salvarPrecoInsumo(insumo.id, preco),
       () => {
