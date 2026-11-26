@@ -8,6 +8,7 @@ import {
   carregarConfig,
   carregarCustoHora,
   carregarForno,
+  carregarHistoricoProduto,
   carregarInsumos,
   carregarProdutos,
 } from "@/lib/queries";
@@ -21,21 +22,23 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
   let forno;
   let canais;
   let config;
+  let historico;
 
   try {
-    [insumos, produtos, custoHora, forno, canais, config] = await Promise.all([
+    [insumos, produtos, custoHora, forno, canais, config, historico] = await Promise.all([
       carregarInsumos(),
       carregarProdutos(),
       carregarCustoHora(),
       carregarForno(),
       carregarCanais(),
       carregarConfig(),
+      carregarHistoricoProduto(produtoId),
     ]);
   } catch (err) {
     return (
       <EstadoErro
         titulo="Não foi possível abrir o produto"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
         acaoHref="/produtos"
         acaoRotulo="Voltar para Produtos"
       />
@@ -62,6 +65,7 @@ async function ConteudoDetalheProduto({ produtoId }: { produtoId: number }) {
       forno={forno}
       canais={canais}
       config={config}
+      historico={historico}
     />
   );
 }

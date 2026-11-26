@@ -16,7 +16,7 @@ async function ConteudoProdutos() {
     return (
       <EstadoErro
         titulo="Não foi possível carregar os produtos"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }

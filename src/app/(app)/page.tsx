@@ -1,12 +1,16 @@
 import Link from "next/link";
+import { unstable_rethrow } from "next/navigation";
 import { Suspense } from "react";
+import { AlertasMargem } from "@/components/AlertasMargem";
 import { CarregandoPainel } from "@/components/CarregandoPainel";
 import { EstadoErro } from "@/components/EstadoErro";
 import { BadgeMargem, BarraCusto } from "@/components/IndicadorMargem";
 import { exigirUsuario } from "@/lib/auth";
 import { brl } from "@/lib/calc";
 import {
+  carregarAlertas,
   carregarHoje,
+  carregarMaisSubiram,
   carregarPainel,
   type ProdutoPainel,
   type ResumoCanal,
@@ -52,14 +56,22 @@ function formatarHoraSP(iso: string): string {
 async function ConteudoInicio() {
   let painel;
   let hoje;
+  let alertas;
+  let maisSubiram;
 
   try {
-    [painel, hoje] = await Promise.all([carregarPainel(), carregarHoje()]);
+    [painel, hoje, alertas, maisSubiram] = await Promise.all([
+      carregarPainel(),
+      carregarHoje(),
+      // Histórico é complemento: se falhar, o resto do Início continua de pé.
+      carregarAlertas().catch((err) => { unstable_rethrow(err); console.error("[Início] alertas", err); return []; }),
+      carregarMaisSubiram().catch((err) => { unstable_rethrow(err); console.error("[Início] mais subiram", err); return []; }),
+    ]);
   } catch (err) {
     return (
       <EstadoErro
         titulo="Não foi possível carregar o painel"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }
@@ -79,11 +91,16 @@ async function ConteudoInicio() {
 
   return (
     <>
+      <AlertasMargem alertas={alertas} />
+
       <div className="home-month-bar">
         <span className="page-sub" style={{ margin: 0 }}>
           Resumo do mês
         </span>
-        <Link href={`/vendas?mes=${hoje.ano}-${String(hoje.mes).padStart(2, "0")}`} className="month-chip">
+        <Link
+          href={`/vendas?mes=${hoje.ano}-${String(hoje.mes).padStart(2, "0")}`}
+          className="month-chip"
+        >
           {nomeMesCapitalizado(hoje.ano, hoje.mes)} &rarr;
         </Link>
       </div>
@@ -137,7 +154,11 @@ async function ConteudoInicio() {
       <section aria-label="Últimas vendas de hoje">
         <div className="section-row" style={{ marginBottom: 8 }}>
           <h2 className="section-heading">Últimas vendas de hoje</h2>
-          <Link href="/vendas" className="alert-link" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)" }}>
+          <Link
+            href="/vendas"
+            className="alert-link"
+            style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)" }}
+          >
             Ver mês &rarr;
           </Link>
         </div>
@@ -229,6 +250,41 @@ async function ConteudoInicio() {
           </Link>
         </section>
       )}
+
+      <section aria-label="Insumos que subiram nos últimos 90 dias">
+        <div className="section-row" style={{ marginBottom: 8 }}>
+          <h2 className="section-heading">Subiu nos últimos 90 dias</h2>
+          <Link href="/insumos" style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)" }}>
+            Ver insumos &rarr;
+          </Link>
+        </div>
+
+        {maisSubiram.length === 0 ? (
+          <div className="card">
+            <p className="section-note">Sem altas de insumo registradas nos últimos 90 dias.</p>
+          </div>
+        ) : (
+          <div className="subiu-list">
+            {maisSubiram.map((item) => (
+              <Link
+                key={item.insumoId}
+                href={`/insumos/${item.insumoId}`}
+                className="subiu-row"
+              >
+                <div className="subiu-info">
+                  <span className="subiu-nome">{item.nome}</span>
+                  <span className="subiu-precos tnum">
+                    {brl(item.de)} &rarr; {brl(item.para)}
+                  </span>
+                </div>
+                <span className="badge badge--crit tnum">
+                  +{item.variacaoPct.toFixed(0)}%
+                </span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
     </>
   );
 }

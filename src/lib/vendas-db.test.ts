@@ -18,7 +18,7 @@ test("migração, snapshots, validações, cancelamento, arquivamento, consultas
   const anterior = cache._db;
   const dir = await mkdtemp(path.join(os.tmpdir(), "carol-vendas-"));
   try {
-    for (const arquivo of (await readdir("drizzle")).filter((n) => /^000[0-5]_.*\.sql$/.test(n)).sort()) await pg.exec(await readFile(`drizzle/${arquivo}`, "utf8"));
+    for (const arquivo of (await readdir("drizzle")).filter((n) => /^\d{4}_.*\.sql$/.test(n)).sort()) await pg.exec(await readFile(`drizzle/${arquivo}`, "utf8"));
     // PGlite devolve {rows} em execute; postgres-js devolve a própria lista.
     // Apenas essa fronteira difere; queries, parâmetros e transações são reais.
     const db = drizzle(pg, { schema });

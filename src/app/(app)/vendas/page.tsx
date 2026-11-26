@@ -37,7 +37,7 @@ async function ConteudoVendasMes({ ano, mes }: { ano: number; mes: number }) {
     return (
       <EstadoErro
         titulo="Não foi possível carregar o mês"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }

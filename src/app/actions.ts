@@ -58,7 +58,7 @@ export async function salvarImposto(pct: string): Promise<Resultado> {
   if (resultado.ok) atualizar();
   return resultado;
 }
-export async function salvarCustoProduto(id: number, campos: { minutosForno: string; perdaPct: string }): Promise<Resultado> {
+export async function salvarCustoProduto(id: number, campos: { minutosForno: string; perdaPct: string; semForno?: boolean }): Promise<Resultado> {
   const usuario = await exigirUsuario();
   const resultado = await custos.salvarCustoProduto(usuario.id, id, campos);
   if (resultado.ok) atualizar();
@@ -203,7 +203,8 @@ export async function salvarProduto(
   campos: {
     nome: string;
     rendimento: string;
-    markupAlvo: string;
+    /** Opcional desde a etapa 5: a tela não edita mais; ausente mantém o valor gravado. */
+    markupAlvo?: string;
     minutosPreparo: string;
     minutosAcabamentoUn: string;
   },
@@ -213,7 +214,7 @@ export async function salvarProduto(
   if (ehFalha(nome)) return nome;
   const rendimento = positivo(campos.rendimento, "Rendimento");
   if (ehFalha(rendimento)) return rendimento;
-  const markupAlvo = naoNegativo(campos.markupAlvo, "Markup alvo");
+  const markupAlvo = campos.markupAlvo === undefined ? undefined : naoNegativo(campos.markupAlvo, "Markup alvo");
   if (ehFalha(markupAlvo)) return markupAlvo;
   const minutosPreparo = naoNegativo(campos.minutosPreparo, "Tempo de preparo");
   if (ehFalha(minutosPreparo)) return minutosPreparo;
@@ -226,7 +227,7 @@ export async function salvarProduto(
     .set({
       nome,
       rendimento: String(rendimento),
-      markupAlvo: String(markupAlvo),
+      ...(markupAlvo === undefined ? {} : { markupAlvo: String(markupAlvo) }),
       minutosPreparo: String(minutosPreparo),
       minutosAcabamentoUn: String(minutosAcabamentoUn),
     })
@@ -604,6 +605,14 @@ export async function salvarEvento(id: number, entrada: import("@/lib/vendas").E
 export async function cancelarEvento(id: number): Promise<Resultado> {
   const usuario = await exigirUsuario();
   const resultado = await gravacoesVendas.cancelarEvento(usuario.id, id);
+  if (resultado.ok) atualizar();
+  return resultado;
+}
+
+/** Etapa 5: "Entendi" no alerta de margem. */
+export async function dispensarAlerta(chave: string): Promise<Resultado> {
+  const usuario = await exigirUsuario();
+  const resultado = await custos.dispensarAlerta(usuario.id, chave);
   if (resultado.ok) atualizar();
   return resultado;
 }

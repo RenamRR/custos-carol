@@ -37,7 +37,7 @@ async function ConteudoMais({ usuario }: { usuario: Usuario }) {
     return (
       <EstadoErro
         titulo="Não foi possível carregar as configurações"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }

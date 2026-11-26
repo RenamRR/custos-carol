@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -191,10 +192,15 @@ function CardInsumo({ insumo }: { insumo: Insumo }) {
         <span className="insumo-unit-cost tnum">
           {brl4(custoUnit)} <span style={{ color: "var(--muted)", fontWeight: 600 }}>/{unidade}</span>
         </span>
+        <Link href={`/insumos/${insumo.id}`} className="insumo-hist-link">
+          Ver histórico &rarr;
+        </Link>
         {salvoHistorico ? (
           <span className="badge badge--good">Novo preço salvo no histórico</span>
         ) : (
-          <span className="field-hint">Mudar preço cria registro no histórico</span>
+          <span className="field-hint" style={{ flexBasis: "100%" }}>
+            Mudar preço cria registro no histórico
+          </span>
         )}
       </div>
 

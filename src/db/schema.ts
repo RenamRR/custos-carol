@@ -89,6 +89,8 @@ export const produtos = pgTable("produtos", {
   markupAlvo: numeric("markup_alvo", { precision: 8, scale: 2 }).notNull().default("3.50"),
   minutosForno: numeric("minutos_forno", { precision: 14, scale: 2 }).notNull().default("0"),
   perdaPct: numeric("perda_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  /** Não vai ao forno: forno vale 0 e não fica pendente (etapa 5). */
+  semForno: boolean("sem_forno").notNull().default(false),
   /** Tempo do lote inteiro: bater, assar, esfriar. Não cresce com o rendimento. */
   minutosPreparo: numeric("minutos_preparo", { precision: 14, scale: 2 }).notNull().default("0"),
   /** Tempo por unidade: cortar, embalar, etiquetar. Cresce com o rendimento. */
@@ -276,3 +278,10 @@ export const vendaItens = pgTable("venda_itens", {
   check("venda_itens_preco_un_check", sql`${t.precoUn} >= 0`),
   check("venda_itens_custo_un_check", sql`${t.custoUn} >= 0`),
 ]);
+
+/** Etapa 5: alerta de margem é calculado; só o "dispensar" é gravado. */
+export const alertasDispensados = pgTable("alertas_dispensados", {
+  chave: text("chave").primaryKey(),
+  dispensadoPor: integer("dispensado_por").references(() => usuarios.id, { onDelete: "set null" }),
+  dispensadoEm: timestamp("dispensado_em", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [check("alertas_dispensados_chave_check", sql`length(${t.chave}) <= 60`)]);

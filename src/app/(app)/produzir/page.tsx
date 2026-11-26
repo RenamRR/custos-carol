@@ -16,7 +16,7 @@ async function ConteudoProduzir({ planoQuery }: { planoQuery: string }) {
     return (
       <EstadoErro
         titulo="Não foi possível carregar a tela de produção"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }

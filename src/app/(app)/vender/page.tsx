@@ -15,7 +15,7 @@ async function ConteudoVender() {
     return (
       <EstadoErro
         titulo="Não foi possível carregar a tela de vendas"
-        mensagem={err instanceof Error ? err.message : "Erro ao consultar o banco."}
+        erro={err}
       />
     );
   }

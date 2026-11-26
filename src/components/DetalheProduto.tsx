@@ -30,8 +30,10 @@ import {
   type LinhaReceita,
 } from "@/lib/calc";
 import type { Canal, Config, Forno, ProdutoCompleto } from "@/lib/custo-completo";
+import type { HistoricoProduto } from "@/lib/linha-do-tempo";
 import { BadgeMargem, BarraCusto } from "./IndicadorMargem";
 import { CartaoPrecoCanal } from "./CartaoPrecoCanal";
+import { HistoricoProdutoSection } from "./HistoricoProdutoSection";
 import { desfocarNoEnter, paraCampo, paraPreco, useSalvar } from "./useSalvar";
 
 function CardLinhaIngrediente({
@@ -250,6 +252,7 @@ export function DetalheProduto({
   forno,
   canais,
   config,
+  historico,
 }: {
   produto: ProdutoCompleto;
   insumos: Insumo[];
@@ -257,6 +260,7 @@ export function DetalheProduto({
   forno: Forno;
   canais: Canal[];
   config: Config;
+  historico: HistoricoProduto | null;
 }) {
   const router = useRouter();
   const dadosSave = useSalvar();
@@ -278,6 +282,7 @@ export function DetalheProduto({
   );
   const [minutosForno, setMinutosForno] = useState(paraCampo(produto.minutosForno, 2));
   const [perdaPct, setPerdaPct] = useState(paraCampo(produto.perdaPct, 2));
+  const [semForno, setSemForno] = useState(Boolean(produto.semForno));
 
   useEffect(() => {
     setNome(produto.nome);
@@ -287,6 +292,7 @@ export function DetalheProduto({
     setMinutosAcabamentoUn(paraCampo(produto.minutosAcabamentoUn, 2));
     setMinutosForno(paraCampo(produto.minutosForno, 2));
     setPerdaPct(paraCampo(produto.perdaPct, 2));
+    setSemForno(Boolean(produto.semForno));
   }, [produto]);
 
   useEffect(() => {
@@ -310,7 +316,7 @@ export function DetalheProduto({
   const porId = new Map(insumos.map((i) => [i.id, i]));
 
   const perdaNum = Math.min(89.99, Math.max(0, parseNumeroBR(perdaPct)));
-  const minutosFornoNum = Math.max(0, parseNumeroBR(minutosForno));
+  const minutosFornoNum = semForno ? 0 : Math.max(0, parseNumeroBR(minutosForno));
 
   const produtoAoVivo: ProdutoCompleto = {
     ...produto,
@@ -319,8 +325,9 @@ export function DetalheProduto({
     precoVenda: parseNumeroBR(precoVenda),
     minutosPreparo: parseNumeroBR(minutosPreparo),
     minutosAcabamentoUn: parseNumeroBR(minutosAcabamentoUn),
-    minutosForno: minutosFornoNum,
+    minutosForno: Math.max(0, parseNumeroBR(minutosForno)),
     perdaPct: perdaNum,
+    semForno,
   };
 
   const r = calcularProduto(produtoAoVivo, insumos, custoHora, forno.custoMinuto);
@@ -379,7 +386,7 @@ export function DetalheProduto({
       : []),
   ].sort((a, b) => b.valor - a.valor);
 
-  function salvarFornoEPerda() {
+  function salvarFornoEPerda(semFornoDestino = semForno) {
     custoFornoSave.limparErro();
     const minStr = minutosForno.trim();
     const perdaStr = perdaPct.trim();
@@ -387,14 +394,32 @@ export function DetalheProduto({
     const perdaFmt = paraCampo(Math.max(0, parseNumeroBR(perdaStr)), 2);
     setMinutosForno(minFmt);
     setPerdaPct(perdaFmt);
+    // Se o salvar falhar, o toggle volta ao valor gravado (semForno desta renderização).
+    const anterior = semForno;
+    const desfazer = () => { if (semFornoDestino !== anterior) setSemForno(anterior); };
     custoFornoSave.salvar(
-      () =>
-        salvarCustoProduto(produto.id, {
-          minutosForno: minStr || "0",
-          perdaPct: perdaStr || "0",
-        }),
+      async () => {
+        try {
+          const r = await salvarCustoProduto(produto.id, {
+            minutosForno: minStr || "0",
+            perdaPct: perdaStr || "0",
+            semForno: semFornoDestino,
+          });
+          if (!r?.ok) desfazer();
+          return r;
+        } catch (e) {
+          desfazer();
+          throw e;
+        }
+      },
       () => router.refresh(),
     );
+  }
+
+  function alternarSemForno() {
+    const proximo = !semForno;
+    setSemForno(proximo);
+    salvarFornoEPerda(proximo);
   }
 
   function salvarDadosProduto() {
@@ -404,7 +429,6 @@ export function DetalheProduto({
         salvarProduto(produto.id, {
           nome,
           rendimento,
-          markupAlvo: String(produto.markupAlvo),
           minutosPreparo,
           minutosAcabamentoUn,
         }),
@@ -597,6 +621,8 @@ export function DetalheProduto({
         </section>
       )}
 
+      <HistoricoProdutoSection historico={historico} />
+
       <section className={`card${dadosSave.pendente ? " salvando" : ""}`} aria-label="Dados básicos do produto">
         <h2 className="section-heading" style={{ marginBottom: 12 }}>
           Dados do produto
@@ -767,6 +793,22 @@ export function DetalheProduto({
           <strong className="tnum">{brl(r.custoForno)}</strong>
         </div>
 
+        <button
+          type="button"
+          role="switch"
+          aria-checked={semForno}
+          className="toggle-forno-row"
+          style={{ width: "100%", textAlign: "left" }}
+          disabled={custoFornoSave.pendente}
+          onClick={alternarSemForno}
+        >
+          <span className="toggle-forno-info">
+            <strong>Não vai ao forno</strong>
+            <span>Zera o custo de forno e tira a pendência de tempo de forno</span>
+          </span>
+          <span className={`toggle-switch${semForno ? " is-on" : ""}`} aria-hidden="true" />
+        </button>
+
         <div className="form-grid-2">
           <div className="field-group">
             <label className="field-label" htmlFor="prod-forno">
@@ -776,10 +818,11 @@ export function DetalheProduto({
               id="prod-forno"
               className="field-input field-input--num"
               inputMode="decimal"
+              disabled={semForno}
               value={minutosForno}
               onChange={(e) => setMinutosForno(e.target.value)}
               onKeyDown={desfocarNoEnter}
-              onBlur={salvarFornoEPerda}
+              onBlur={() => salvarFornoEPerda()}
             />
           </div>
 
@@ -795,7 +838,7 @@ export function DetalheProduto({
                 value={perdaPct}
                 onChange={(e) => setPerdaPct(e.target.value)}
                 onKeyDown={desfocarNoEnter}
-                onBlur={salvarFornoEPerda}
+                onBlur={() => salvarFornoEPerda()}
               />
               <span className="field-suffix">%</span>
             </div>
@@ -803,7 +846,7 @@ export function DetalheProduto({
         </div>
 
         <div style={{ marginTop: 12 }}>
-          {minutosFornoNum > 0 && !forno.informado ? (
+          {!semForno && minutosFornoNum > 0 && !forno.informado ? (
             <div className="banner-aviso">
               O gás do forno não foi informado ainda.{" "}
               <Link href="/mais#forno" style={{ color: "inherit", fontWeight: 800 }}>

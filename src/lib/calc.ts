@@ -54,6 +54,8 @@ export interface Produto {
   /** Opcionais só para compatibilidade com fixtures/consumidores da etapa 1. */
   minutosForno?: number;
   perdaPct?: number;
+  /** Não vai ao forno: forno vale 0 e não entra em "falta preencher" (etapa 5). */
+  semForno?: boolean;
   linhas: LinhaReceita[];
   embalagens: LinhaEmbalagem[];
 }
@@ -166,7 +168,7 @@ export function calcularProduto(
   const minutosLote = minutosDoLote(produto, unidadesBoas);
   const custoMaoDeObra = (minutosLote / 60) * custoHora;
   const custoPreparo = (produto.minutosPreparo / 60) * custoHora;
-  const custoForno = (produto.minutosForno ?? 0) * custoMinutoForno;
+  const custoForno = produto.semForno ? 0 : (produto.minutosForno ?? 0) * custoMinutoForno;
   const custoPerda = (custoInsumos + custoPreparo + custoForno) * (perdaPct / 100);
   // ADR-002: decompõe o mesmo lote, sem cobrar a perda duas vezes.
   for (const segmento of segmentos) segmento.valor *= fracaoBoa;
@@ -250,7 +252,7 @@ export function faltaPreencher(produtos: ProdutoCompleto[], custoHora: number, f
   if (custoHora === 0) itens.push({ id: "hora", mensagem: "Informe o valor da hora de trabalho", href: "/mais#mao-de-obra" });
   if (!forno.informado) itens.push({ id: "forno", mensagem: "Informe o preço e a duração do botijão", href: "/mais#forno" });
   for (const produto of produtos) {
-    if (produto.minutosForno === 0) itens.push({ id: `forno-${produto.id}`, mensagem: `Informe os minutos de forno de ${produto.nome}`, href: `/produtos/${produto.id}#forno` });
+    if (!produto.semForno && produto.minutosForno === 0) itens.push({ id: `forno-${produto.id}`, mensagem: `Informe os minutos de forno de ${produto.nome}`, href: `/produtos/${produto.id}#forno` });
   }
   const desconhecidas = new Map<number, string>();
   for (const canal of canais.filter((c) => c.ativo)) {

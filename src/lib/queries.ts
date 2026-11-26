@@ -3,6 +3,8 @@ import { exigirUsuario } from "./auth";
 import * as consultas from "./consultas-db";
 import * as consultasVendas from "./consultas-vendas";
 import * as consultasProducao from "./consultas-producao";
+import * as consultasHistorico from "./consultas-historico";
+import { idValido } from "./validacao-custo";
 import type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto } from "./custo-completo";
 export type { Canal, Config, FormaPagamento, Forno, Painel, ProdutoCompleto, ProdutoPainel, ResumoCanal, Pendencia } from "./custo-completo";
 export type { PontoHistorico } from "./consultas-db";
@@ -71,4 +73,25 @@ export type { DadosProduzir, ProdutoProducao, InsumoProducao } from "./producao"
 export async function carregarProduzir(): Promise<import("./producao").DadosProduzir> {
   await exigirUsuario();
   return consultasProducao.carregarProduzir();
+}
+
+// Contrato etapa 5. Datas em ISO (string); margens em %.
+export type { AlertaMargem, CausaMudanca, HistoricoInsumo, HistoricoProduto, InsumoQueSubiu, PontoInsumo, PontoProduto, TipoCausa } from "./linha-do-tempo";
+export async function carregarAlertas(): Promise<import("./linha-do-tempo").AlertaMargem[]> {
+  await exigirUsuario();
+  return consultasHistorico.carregarAlertas();
+}
+/** null quando o id não existe: a página responde notFound(). */
+export async function carregarHistoricoInsumo(id: number): Promise<import("./linha-do-tempo").HistoricoInsumo | null> {
+  await exigirUsuario();
+  return idValido(id) ? consultasHistorico.carregarHistoricoInsumo(id) : null;
+}
+/** null quando o produto não existe ou está arquivado. */
+export async function carregarHistoricoProduto(id: number): Promise<import("./linha-do-tempo").HistoricoProduto | null> {
+  await exigirUsuario();
+  return idValido(id) ? consultasHistorico.carregarHistoricoProduto(id) : null;
+}
+export async function carregarMaisSubiram(): Promise<import("./linha-do-tempo").InsumoQueSubiu[]> {
+  await exigirUsuario();
+  return consultasHistorico.carregarMaisSubiram();
 }

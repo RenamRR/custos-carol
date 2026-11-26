@@ -72,6 +72,7 @@ interface LinhaProduto {
   minutos_acabamento_un: string;
   minutos_forno: string;
   perda_pct: string;
+  sem_forno: boolean;
   preco_venda: string | null;
 }
 
@@ -95,7 +96,7 @@ export async function carregarProdutos(db: LeitorDb = getDb()): Promise<ProdutoC
   const produtosRows = await db.execute<Row<LinhaProduto>>(sql`
     select
       pr.id, pr.nome, pr.rendimento, pr.markup_alvo,
-      pr.minutos_preparo, pr.minutos_acabamento_un, pr.minutos_forno, pr.perda_pct,
+      pr.minutos_preparo, pr.minutos_acabamento_un, pr.minutos_forno, pr.perda_pct, pr.sem_forno,
       pv.preco as preco_venda
     from produtos pr
     left join lateral (
@@ -165,6 +166,7 @@ export async function carregarProdutos(db: LeitorDb = getDb()): Promise<ProdutoC
     minutosAcabamentoUn: num(p.minutos_acabamento_un),
     minutosForno: num(p.minutos_forno),
     perdaPct: num(p.perda_pct),
+    semForno: p.sem_forno === true,
     precosPorCanal: Array.from(precosCanal).filter((c) => c.produto_id === p.id)
       .map((c) => ({ canalId: c.canal_id, preco: num(c.preco), herdado: c.herdado })),
     precoVenda: num(p.preco_venda),

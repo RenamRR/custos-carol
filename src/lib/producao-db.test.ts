@@ -12,7 +12,7 @@ test("query: apenas produtos ativos, preço vigente com desempate, null distinto
   const cache = globalThis as unknown as { _db?: ReturnType<typeof getDb> };
   const anterior = cache._db;
   try {
-    for (const arquivo of (await readdir("drizzle")).filter((n) => /^000[0-5]_.*\.sql$/.test(n)).sort()) await pg.exec(await readFile(`drizzle/${arquivo}`, "utf8"));
+    for (const arquivo of (await readdir("drizzle")).filter((n) => /^\d{4}_.*\.sql$/.test(n)).sort()) await pg.exec(await readFile(`drizzle/${arquivo}`, "utf8"));
     // Adapta apenas o envelope execute: PGlite {rows}, postgres-js lista diretamente.
     function adaptar(alvo: object): object {
       return new Proxy(alvo, { get(target, prop, receiver) {
